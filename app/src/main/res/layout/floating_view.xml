@@ -1,12 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             android:background="#800c8c00"
-             android:layout_width="match_parent"
-             android:layout_height="200dp">
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
 
-    <ImageView
-        android:src="@drawable/ic_launcher_foreground"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+    <RelativeLayout
+        android:layout_width="75dp"
+        android:layout_height="75dp"
+        android:layout_margin="5dp"
+        android:gravity="center"
+        android:id="@+id/rl_speed">
+        <ImageView
+            android:id="@+id/iv_speed"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/current_speed"
+            android:src="@drawable/ic_green_icon" />
+        <TextView
+            android:id="@+id/tv_speed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="48"
+            android:textSize="26sp"/>
+    </RelativeLayout>
 
-</FrameLayout>
+    <RelativeLayout
+        android:layout_width="75dp"
+        android:layout_height="75dp"
+        android:layout_margin="5dp"
+        android:gravity="center"
+        android:layout_below="@+id/rl_speed">
+        <ImageView
+            android:id="@+id/iv_speed_limit"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/current_speed"
+            android:src="@drawable/ic_red_icon" />
+        <TextView
+            android:id="@+id/tv_speed_limit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="70"
+            android:textSize="26sp"/>
+    </RelativeLayout>
+
+
+
+
+</RelativeLayout>
