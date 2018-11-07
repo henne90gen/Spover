@@ -1,5 +1,7 @@
 package de.spover.spover
 
+typealias LocationCallback = (Location?) -> Unit
+
 interface ILocationService {
-    fun fetchLocation(): Location
+    fun fetchLocation(callback: LocationCallback)
 }

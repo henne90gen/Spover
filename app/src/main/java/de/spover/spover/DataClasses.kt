@@ -1,3 +1,3 @@
 package de.spover.spover
 
-data class Location(val latitude: Int, val longitude: Int)
+data class Location(val latitude: Double, val longitude: Double)
