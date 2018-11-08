@@ -1,6 +1,27 @@
 <resources>
     <string name="app_name">Spover</string>
 
+    <!-- Overlay -->
     <string name="current_speed">current speed</string>
     <string name="speed_limit">speed limit</string>
+
+    <!-- Permission descriptions -->
+    <string name="overlay_permission">Display Spover on top of other apps</string>
+    <string name="location_permission">Spover can access your location</string>
+    <string name="auto_launch_permission">Spover can launch automatically on startup of navigation apps</string>
+
+    <!-- Card titles-->
+    <string name="permissions">Permissions</string>
+    <string name="overlay">Overlay</string>
+    <string name="warnings">Warnings</string>
+
+    <string name="show_speed_option">Show speed</string>
+    <string name="show_speed_limit">Show speed limit</string>
+
+    <string name="warning_option">Sound alert on speeding</string>
+    <string name="et_warning_threshold">Threshold:</string>
+
+    <string name="pref_show_speed">pref_show_speed</string>
+    <string name="pref_show_speed_limit">pref_show_speed_limit</string>
+
 </resources>

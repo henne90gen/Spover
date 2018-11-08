@@ -84,10 +84,6 @@ class OverlayService: Service(), View.OnTouchListener {
         return mDetector.onTouchEvent(motionEvent)
     }
 
-    companion object {
-        private var TAG = OverlayService::class.java.simpleName
-    }
-
     private class MyGestureListener(var overlayService: OverlayService) : GestureDetector.OnGestureListener {
 
         override fun onSingleTapUp(p0: MotionEvent?): Boolean {
@@ -122,4 +118,7 @@ class OverlayService: Service(), View.OnTouchListener {
         }
     }
 
+    companion object {
+        private var TAG = OverlayService::class.java.simpleName
+    }
 }

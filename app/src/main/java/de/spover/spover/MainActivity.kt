@@ -3,6 +3,7 @@ package de.spover.spover
 import android.content.Intent
 import android.net.Uri
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
@@ -23,13 +24,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var permissionSwitch: Switch
     private lateinit var overlayBtn: Button
 
+    private lateinit var speedSwitch: Switch
+    private lateinit var speedLimitSwitch: Switch
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         locationService = LocationService(this)
         latText = findViewById(R.id.lat)
         lonText = findViewById(R.id.lon)
-        permissionSwitch = findViewById(R.id.locationPermissionSwitch)
+        permissionSwitch = findViewById(R.id.switchLocationPermission)
         permissionSwitch.setOnCheckedChangeListener { _, isChecked -> this.checkLocationPermission(isChecked) }
         checkLocationPermission(true)
 
@@ -43,7 +47,29 @@ class MainActivity : AppCompatActivity() {
                 checkDrawOverlayPermission()
             }
         }
+        initUI()
+    }
 
+    private fun initUI() {
+        val preferences = this.getPreferences(Context.MODE_PRIVATE)
+
+        speedSwitch = findViewById(R.id.switch_show_speed)
+        speedSwitch.isChecked =  preferences.getBoolean(getString(R.string.pref_show_speed), true)
+        speedSwitch.setOnClickListener {
+            with (preferences.edit()) {
+                putBoolean(getString(R.string.pref_show_speed), speedSwitch.isChecked)
+                apply()
+            }
+        }
+
+        speedLimitSwitch = findViewById(R.id.switch_show_speed_limit)
+        speedLimitSwitch.isChecked =  preferences.getBoolean(getString(R.string.pref_show_speed_limit), true)
+        speedLimitSwitch.setOnClickListener {
+            with (preferences.edit()) {
+                putBoolean(getString(R.string.pref_show_speed_limit), speedLimitSwitch.isChecked)
+                apply()
+            }
+        }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -118,6 +144,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
+        private var TAG = MainActivity::class.java.simpleName
         const val REQUEST_CODE = 10101
     }
 }
