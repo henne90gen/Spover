@@ -51,7 +51,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initUI() {
-        val preferences = this.getPreferences(Context.MODE_PRIVATE)
+
+        val preferences = this.getSharedPreferences(getString(R.string.pref_file_name), Context.MODE_PRIVATE)
 
         speedSwitch = findViewById(R.id.switch_show_speed)
         speedSwitch.isChecked =  preferences.getBoolean(getString(R.string.pref_show_speed), true)
