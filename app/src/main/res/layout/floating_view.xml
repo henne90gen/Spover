@@ -4,48 +4,51 @@
     android:layout_height="wrap_content">
 
     <RelativeLayout
+        android:id="@+id/rl_speed"
         android:layout_width="75dp"
         android:layout_height="75dp"
         android:layout_margin="5dp"
-        android:gravity="center"
-        android:id="@+id/rl_speed">
+        android:gravity="center">
+
         <ImageView
             android:id="@+id/iv_speed"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:contentDescription="@string/current_speed"
             android:src="@drawable/ic_green_icon" />
+
         <TextView
             android:id="@+id/tv_speed"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:text="48"
-            android:textSize="26sp"/>
+            android:textSize="26sp" />
     </RelativeLayout>
 
     <RelativeLayout
+        android:id="@+id/rl_speed_limit"
         android:layout_width="75dp"
         android:layout_height="75dp"
+        android:layout_below="@+id/rl_speed"
         android:layout_margin="5dp"
-        android:gravity="center"
-        android:layout_below="@+id/rl_speed">
+        android:gravity="center">
+
         <ImageView
             android:id="@+id/iv_speed_limit"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:contentDescription="@string/current_speed"
             android:src="@drawable/ic_red_icon" />
+
         <TextView
             android:id="@+id/tv_speed_limit"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:text="70"
-            android:textSize="26sp"/>
+            android:textSize="26sp" />
     </RelativeLayout>
-
-
 
 
 </RelativeLayout>
