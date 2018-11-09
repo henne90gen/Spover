@@ -5,15 +5,6 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 
-class SpoverSettings<T> private constructor(val defaultValue: T, val name: String) {
-    companion object {
-        val SHOW_CURRENT_SPEED = SpoverSettings(true, "SHOW_CURRENT_SPEED")
-        val SHOW_SPEED_LIMIT = SpoverSettings(true, "SHOW_SPEED_LIMIT")
-        val OVERLAY_X = SpoverSettings(0, "")
-        val OVERLAY_Y = SpoverSettings(0, "")
-    }
-}
-
 class SettingsStore(activity: Activity) {
     companion object {
         const val FILE_NAME = "SpoverSettingsFile"
