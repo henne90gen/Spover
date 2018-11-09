@@ -49,6 +49,6 @@ class LocationService(context: Context) : ILocationService {
     }
 
     private fun convert(location: android.location.Location): Location {
-        return Location(location.latitude, location.longitude)
+        return Location(location.latitude, location.longitude, location.speed.toDouble())
     }
 }

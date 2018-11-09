@@ -11,7 +11,6 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.IBinder
 import android.util.Log
-import android.support.v4.view.GestureDetectorCompat
 import android.view.*
 import android.widget.ImageView
 import android.widget.RelativeLayout
@@ -69,7 +68,7 @@ class OverlayService : Service(), View.OnTouchListener, SensorEventListener {
     override fun onSensorChanged(event: SensorEvent) {
         Log.d(TAG, "Counted ${event.values[0]} photons")
         if (event.values[0] < 100 && lightMode != Mode.DARK) {
-            lightMode= Mode.DARK
+            lightMode = Mode.DARK
             adaptToLightMode(lightMode)
         } else {
             lightMode = Mode.BRIGHT
