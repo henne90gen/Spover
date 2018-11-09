@@ -9,12 +9,14 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.location.Location
 import android.os.IBinder
 import android.util.Log
 import android.view.*
 import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
+import kotlin.math.roundToInt
 
 class OverlayService : Service(), View.OnTouchListener, SensorEventListener {
 
@@ -24,8 +26,8 @@ class OverlayService : Service(), View.OnTouchListener, SensorEventListener {
 
     private var lightMode = Mode.BRIGHT
 
-    private lateinit var settingsStore : SettingsStore
-    private lateinit var locationService: ILocationService
+    private lateinit var settingsStore: SettingsStore
+    private lateinit var locationService: LocationService
 
     private var windowManager: WindowManager? = null
     private var floatingView: View? = null
@@ -51,15 +53,10 @@ class OverlayService : Service(), View.OnTouchListener, SensorEventListener {
 
         settingsStore = SettingsStore(this)
 
-        locationService = LocationService(this)
-        locationService.registerLocationCallback {
-            Log.e(TAG, "Got location update $it")
-            tvSpeed.text = it.speed.toString()
+        locationService = LocationService(this) {
+            tvSpeed.text = formatSpeed(it)
         }
-        locationService.fetchLocation {
-            Log.e(TAG, "Got location $it")
-            tvSpeed.text = it.speed.toString()
-        }
+
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         initLightSensor()
         addOverlayView()
@@ -69,6 +66,11 @@ class OverlayService : Service(), View.OnTouchListener, SensorEventListener {
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
         sensorManager.registerListener(this, lightSensor, SensorManager.SENSOR_DELAY_NORMAL)
+    }
+
+    private fun formatSpeed(speedInMetersPerSecond: Double): String {
+        val speedInKilometersPerHour: Int = (speedInMetersPerSecond * 3.6).roundToInt()
+        return speedInKilometersPerHour.toString()
     }
 
     private fun addOverlayView() {
@@ -110,7 +112,7 @@ class OverlayService : Service(), View.OnTouchListener, SensorEventListener {
         if (event.values[0] < LIGHT_MODE_TRESHOLD && lightMode != Mode.DARK) {
             lightMode = Mode.DARK
             adaptToLightMode(lightMode)
-        } else if (event.values[0] >= LIGHT_MODE_TRESHOLD && lightMode != Mode.BRIGHT){
+        } else if (event.values[0] >= LIGHT_MODE_TRESHOLD && lightMode != Mode.BRIGHT) {
             lightMode = Mode.BRIGHT
             adaptToLightMode(lightMode)
         }

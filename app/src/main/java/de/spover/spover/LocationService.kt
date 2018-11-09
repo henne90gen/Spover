@@ -1,54 +1,62 @@
 package de.spover.spover
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
+import android.os.Bundle
+import android.support.v4.content.ContextCompat
 import android.util.Log
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationServices
 
-class LocationService(context: Context) : ILocationService {
+typealias LocationCallback = (Double) -> Unit
+
+class LocationService(context: Context, val callback: LocationCallback) : LocationListener {
     companion object {
         private val TAG = LocationService::class.java.simpleName
+        private const val SPEED_THRESHOLD = 1 / 3.6
     }
 
-    private var fusedLocationClient: FusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
+    private val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+    private var lastLocation: Location? = null
+    private var lastTime: Long = 0
 
-    override fun fetchLocation(callback: LocationCallback) {
-        try {
-            fusedLocationClient.lastLocation.addOnSuccessListener { location: android.location.Location? ->
-                location?.let {
-                    callback(convert(it))
-                }
+    init {
+        if (ContextCompat.checkSelfPermission(context,
+                        Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0f, this)
+        } else {
+            Log.e(TAG, "Location permission was not granted")
+        }
+    }
+
+    override fun onLocationChanged(location: Location) {
+        Log.d(TAG, "Received location update: $location")
+        val currentTime = System.currentTimeMillis()
+        lastLocation?.let {
+            val distance = location.distanceTo(it)
+            val timeDiff = currentTime - lastTime
+            val timeDiffInSeconds = timeDiff / 1000.0
+            var speed = distance / timeDiffInSeconds
+            if (speed < SPEED_THRESHOLD) {
+                speed = 0.0
             }
-        } catch (e: SecurityException) {
-            Log.w(TAG, "Could not fetch location!")
+            callback(speed)
         }
+        lastLocation = location
+        lastTime = currentTime
     }
 
-    override fun registerLocationCallback(callback: LocationCallback) {
-        val locationCallback = object : com.google.android.gms.location.LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult?) {
-                locationResult ?: return
-                for (location in locationResult.locations) {
-                    callback(convert(location))
-                }
-            }
-        }
-
-        val locationRequest = LocationRequest()
-        locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        locationRequest.interval = 1
-        try {
-            fusedLocationClient.requestLocationUpdates(locationRequest,
-                    locationCallback,
-                    null /* Looper */)
-        } catch (e: SecurityException) {
-            Log.e(TAG, "Could not register location callback!")
-        }
+    override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {
+        Log.d(TAG, "Status changed: $provider, $status, $extras")
     }
 
-    private fun convert(location: android.location.Location): Location {
-        return Location(location.latitude, location.longitude, location.speed.toDouble())
+    override fun onProviderEnabled(provider: String) {
+        Log.d(TAG, "Provider enabled: $provider")
+    }
+
+    override fun onProviderDisabled(provider: String) {
+        Log.d(TAG, "Provider disabled: $provider")
     }
 }
