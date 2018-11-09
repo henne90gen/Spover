@@ -16,7 +16,6 @@ import android.widget.Toast
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var locationService: ILocationService
     private lateinit var settings: SettingsStore
 
     private lateinit var overlayBtn: Button
@@ -30,7 +29,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        locationService = LocationService(this)
         settings = SettingsStore(this)
         initUI()
     }

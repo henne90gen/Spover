@@ -1,23 +1,25 @@
 package de.spover.spover
 
-import android.app.Activity
+import android.content.Context
 import android.util.Log
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 
-class LocationService(activity: Activity) : ILocationService {
+class LocationService(context: Context) : ILocationService {
     companion object {
         private val TAG = LocationService::class.java.simpleName
     }
 
-    private var fusedLocationClient: FusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(activity)
+    private var fusedLocationClient: FusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
 
     override fun fetchLocation(callback: LocationCallback) {
         try {
             fusedLocationClient.lastLocation.addOnSuccessListener { location: android.location.Location? ->
-                callback(convert(location))
+                location?.let {
+                    callback(convert(it))
+                }
             }
         } catch (e: SecurityException) {
             Log.w(TAG, "Could not fetch location!")
@@ -33,6 +35,7 @@ class LocationService(activity: Activity) : ILocationService {
                 }
             }
         }
+
         val locationRequest = LocationRequest()
         locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         locationRequest.interval = 1
@@ -45,11 +48,7 @@ class LocationService(activity: Activity) : ILocationService {
         }
     }
 
-    private fun convert(location: android.location.Location?): Location? {
-        return if (location != null) {
-            Location(location.latitude, location.longitude)
-        } else {
-            null
-        }
+    private fun convert(location: android.location.Location): Location {
+        return Location(location.latitude, location.longitude)
     }
 }

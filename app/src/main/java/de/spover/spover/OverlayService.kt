@@ -25,6 +25,8 @@ class OverlayService : Service(), View.OnTouchListener, SensorEventListener {
 
     private var lightMode = Mode.BRIGHT
 
+    private lateinit var locationService: ILocationService
+
     private var windowManager: WindowManager? = null
     private var floatingView: View? = null
     private var params: WindowManager.LayoutParams? = null
@@ -45,6 +47,11 @@ class OverlayService : Service(), View.OnTouchListener, SensorEventListener {
 
     override fun onCreate() {
         super.onCreate()
+        Log.d(TAG, "created")
+        locationService = LocationService(this)
+        locationService.registerLocationCallback {
+
+        }
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         initLightSensor()
         addOverlayView()
