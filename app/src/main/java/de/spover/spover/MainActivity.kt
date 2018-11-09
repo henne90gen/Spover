@@ -17,17 +17,21 @@ import android.widget.Toast
 class MainActivity : AppCompatActivity() {
 
     private lateinit var locationService: ILocationService
+    private lateinit var settings: SettingsStore
 
     private lateinit var overlayBtn: Button
     private lateinit var overlaySwitch: Switch
     private lateinit var speedSwitch: Switch
     private lateinit var speedLimitSwitch: Switch
+    private lateinit var soundAlertSwitch: Switch
+
     private lateinit var locationPermissionSwitch: Switch
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         locationService = LocationService(this)
+        settings = SettingsStore(this)
         initUI()
     }
 
@@ -48,21 +52,22 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val settings = SettingsStore(this)
-
         overlaySwitch = findViewById(R.id.switchOverlayPermission)
         overlaySwitch.isChecked = Settings.canDrawOverlays(this)
         overlaySwitch.setOnCheckedChangeListener { _, isChecked ->
             checkDrawOverlayPermission(isChecked)
         }
 
-        speedSwitch = findViewById(R.id.switchShowSpeed)
-        speedSwitch.isChecked = settings.get(SpoverSettings.SHOW_CURRENT_SPEED)!!
-        speedSwitch.setOnCheckedChangeListener { _, isChecked -> settings.set(SpoverSettings.SHOW_CURRENT_SPEED, isChecked) }
+        speedSwitch = setupSettingsSwitch(R.id.switchShowSpeed, SpoverSettings.SHOW_CURRENT_SPEED)
+        speedLimitSwitch = setupSettingsSwitch(R.id.switchShowSpeedLimit, SpoverSettings.SHOW_SPEED_LIMIT)
+        soundAlertSwitch = setupSettingsSwitch(R.id.switchSoundAlert, SpoverSettings.SOUND_ALERT)
+    }
 
-        speedLimitSwitch = findViewById(R.id.switchShowSpeedLimit)
-        speedLimitSwitch.isChecked = settings.get(SpoverSettings.SHOW_SPEED_LIMIT)!!
-        speedLimitSwitch.setOnCheckedChangeListener { _, isChecked -> settings.set(SpoverSettings.SHOW_SPEED_LIMIT, isChecked) }
+    private fun setupSettingsSwitch(id: Int, setting: SpoverSettings<Boolean>): Switch {
+        val switch = findViewById<Switch>(id)
+        switch.isChecked = settings.get(setting)!!
+        switch.setOnCheckedChangeListener { _, isChecked -> settings.set(setting, isChecked) }
+        return switch
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
