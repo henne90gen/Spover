@@ -1,20 +1,20 @@
 package de.spover.spover
 
-import android.app.Activity
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
+import java.lang.IllegalArgumentException
 
-class SettingsStore(activity: Activity) {
+class SettingsStore(context: Context) {
     companion object {
         const val FILE_NAME = "SpoverSettingsFile"
         private val TAG = SettingsStore::class.java.simpleName
     }
 
-    private var preferences: SharedPreferences = activity.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+    private var preferences: SharedPreferences = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
 
     @Suppress("UNCHECKED_CAST")
-    fun <T : Any> get(setting: SpoverSettings<T>): T? {
+    fun <T : Any> get(setting: SpoverSettings<T>): T {
         Log.d(TAG, "Retrieved content of ${setting.name}")
         when {
             setting.defaultValue::class == Boolean::class -> {
@@ -24,7 +24,7 @@ class SettingsStore(activity: Activity) {
                 return preferences.getInt(setting.name, setting.defaultValue as Int) as T
             }
         }
-        return null
+        throw IllegalArgumentException()
     }
 
     @Suppress("UNCHECKED_CAST")

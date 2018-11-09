@@ -24,6 +24,7 @@ class OverlayService : Service(), View.OnTouchListener, SensorEventListener {
 
     private var lightMode = Mode.BRIGHT
 
+    private lateinit var settingsStore : SettingsStore
     private lateinit var locationService: ILocationService
 
     private var windowManager: WindowManager? = null
@@ -47,6 +48,9 @@ class OverlayService : Service(), View.OnTouchListener, SensorEventListener {
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "created")
+
+        settingsStore = SettingsStore(this)
+
         locationService = LocationService(this)
         locationService.registerLocationCallback {
             Log.e(TAG, "Got location update $it")
@@ -67,15 +71,46 @@ class OverlayService : Service(), View.OnTouchListener, SensorEventListener {
         sensorManager.registerListener(this, lightSensor, SensorManager.SENSOR_DELAY_NORMAL)
     }
 
+    private fun addOverlayView() {
+        params = WindowManager.LayoutParams(
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                PixelFormat.TRANSLUCENT)
+
+        params!!.gravity = Gravity.TOP or Gravity.START// or Gravity.START
+        params!!.x = settingsStore.get(SpoverSettings.OVERLAY_X)
+        params!!.y = settingsStore.get(SpoverSettings.OVERLAY_Y)
+
+        floatingView = (getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater).inflate(R.layout.floating_view, null)
+
+        floatingView?.let {
+            rlSpeed = it.findViewById(R.id.rl_speed)
+            rlSpeed.visibility = if (isPrefSpeedVisible()) View.VISIBLE else View.GONE
+
+            rlSpeedLimit = it.findViewById(R.id.rl_speed_limit)
+            rlSpeedLimit.visibility = if (isPrefSpeedLimitVisible()) View.VISIBLE else View.GONE
+
+            ivSpeed = it.findViewById(R.id.iv_speed)
+            ivSpeedLimit = it.findViewById(R.id.iv_speed_limit)
+
+            tvSpeed = it.findViewById(R.id.tv_speed)
+            tvSpeedLimit = it.findViewById(R.id.tv_speed_limit)
+
+            it.setOnTouchListener(this)
+            windowManager?.addView(floatingView, params)
+        }
+    }
+
     override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
     }
 
     override fun onSensorChanged(event: SensorEvent) {
-        Log.d(TAG, "Counted ${event.values[0]} photons")
-        if (event.values[0] < 100 && lightMode != Mode.DARK) {
+        if (event.values[0] < LIGHT_MODE_TRESHOLD && lightMode != Mode.DARK) {
             lightMode = Mode.DARK
             adaptToLightMode(lightMode)
-        } else {
+        } else if (event.values[0] >= LIGHT_MODE_TRESHOLD && lightMode != Mode.BRIGHT){
             lightMode = Mode.BRIGHT
             adaptToLightMode(lightMode)
         }
@@ -95,43 +130,6 @@ class OverlayService : Service(), View.OnTouchListener, SensorEventListener {
         }
     }
 
-    private fun addOverlayView() {
-        params = WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-                PixelFormat.TRANSLUCENT)
-
-        params!!.gravity = Gravity.TOP or Gravity.START// or Gravity.START
-        val pos = getPrefPosition()
-        params!!.x = pos.first
-        params!!.y = pos.second
-
-        floatingView = (getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater).inflate(R.layout.floating_view, null)
-
-        floatingView?.let {
-            rlSpeed = it.findViewById(R.id.rl_speed)
-            rlSpeed.visibility = if (getPrefSpeedVisible()) View.VISIBLE else View.GONE
-
-            rlSpeed = it.findViewById(R.id.rl_speed)
-            rlSpeed.visibility = if (getPrefSpeedVisible()) View.VISIBLE else View.GONE
-
-            rlSpeedLimit = it.findViewById(R.id.rl_speed_limit)
-            rlSpeedLimit.visibility = if (getPrefSpeedLimitVisible()) View.VISIBLE else View.GONE
-
-            ivSpeed = it.findViewById(R.id.iv_speed)
-            ivSpeedLimit = it.findViewById(R.id.iv_speed_limit)
-
-            tvSpeed = it.findViewById(R.id.tv_speed)
-            tvSpeedLimit = it.findViewById(R.id.tv_speed_limit)
-
-            it.setOnTouchListener(this)
-            windowManager!!.addView(floatingView, params)
-        }
-
-    }
-
     override fun onDestroy() {
         super.onDestroy()
         if (floatingView != null) {
@@ -142,30 +140,17 @@ class OverlayService : Service(), View.OnTouchListener, SensorEventListener {
         stopSelf()
     }
 
-    private fun getPrefPosition(): Pair<Int, Int> {
-        val preferences = applicationContext.getSharedPreferences(getString(R.string.pref_file_name), Context.MODE_PRIVATE)
-        val x = preferences.getInt(getString(R.string.pref_overlay_x), 0)
-        val y = preferences.getInt(getString(R.string.pref_overlay_y), 0)
-        return Pair(x, y)
-    }
-
     private fun storePrefPosition(x: Int, y: Int) {
-        val preferences = applicationContext.getSharedPreferences(getString(R.string.pref_file_name), Context.MODE_PRIVATE)
-        with(preferences.edit()) {
-            putInt(getString(R.string.pref_overlay_x), x)
-            putInt(getString(R.string.pref_overlay_y), y)
-            apply()
-        }
+        settingsStore.set(SpoverSettings.OVERLAY_X, x)
+        settingsStore.set(SpoverSettings.OVERLAY_Y, y)
     }
 
-    private fun getPrefSpeedVisible(): Boolean {
-        val preferences = applicationContext.getSharedPreferences(getString(R.string.pref_file_name), Context.MODE_PRIVATE)
-        return preferences.getBoolean(getString(R.string.pref_show_speed), true)
+    private fun isPrefSpeedVisible(): Boolean {
+        return settingsStore.get(SpoverSettings.SHOW_CURRENT_SPEED)
     }
 
-    private fun getPrefSpeedLimitVisible(): Boolean {
-        val preferences = applicationContext.getSharedPreferences(getString(R.string.pref_file_name), Context.MODE_PRIVATE)
-        return preferences.getBoolean(getString(R.string.pref_show_speed_limit), true)
+    private fun isPrefSpeedLimitVisible(): Boolean {
+        return settingsStore.get(SpoverSettings.SHOW_SPEED_LIMIT)
     }
 
     /**
@@ -224,5 +209,6 @@ class OverlayService : Service(), View.OnTouchListener, SensorEventListener {
 
     companion object {
         private var TAG = OverlayService::class.java.simpleName
+        private var LIGHT_MODE_TRESHOLD = 70
     }
 }
