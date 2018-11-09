@@ -1,40 +1,43 @@
 package de.spover.spover
 
-import android.content.Intent
-import android.net.Uri
 import android.Manifest
-import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
-import android.view.View
-import android.provider.Settings
-import android.widget.*
+import android.widget.Button
+import android.widget.Switch
+import android.widget.Toast
 
 class MainActivity : AppCompatActivity() {
 
-    private val tag = LocationService::class.java.simpleName
-
     private lateinit var locationService: ILocationService
-    private lateinit var latText: TextView
-    private lateinit var lonText: TextView
-    private lateinit var permissionSwitch: Switch
-    private lateinit var overlayBtn: Button
+    private lateinit var settings: SettingsStore
 
+    private lateinit var overlayBtn: Button
+    private lateinit var overlaySwitch: Switch
     private lateinit var speedSwitch: Switch
     private lateinit var speedLimitSwitch: Switch
+    private lateinit var soundAlertSwitch: Switch
+
+    private lateinit var locationPermissionSwitch: Switch
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         locationService = LocationService(this)
-        latText = findViewById(R.id.lat)
-        lonText = findViewById(R.id.lon)
-        permissionSwitch = findViewById(R.id.switchLocationPermission)
-        permissionSwitch.setOnCheckedChangeListener { _, isChecked -> this.checkLocationPermission(isChecked) }
+        settings = SettingsStore(this)
+        initUI()
+    }
+
+    private fun initUI() {
+        locationPermissionSwitch = findViewById(R.id.switchLocationPermission)
+        locationPermissionSwitch.setOnCheckedChangeListener { _, isChecked -> this.checkLocationPermission(isChecked) }
         checkLocationPermission(true)
 
         overlayBtn = findViewById(R.id.btnOverlay)
@@ -43,80 +46,61 @@ class MainActivity : AppCompatActivity() {
                 // Launch service right away - the user has already previously granted permission
                 launchOverlayService()
             } else {
+                Toast.makeText(this, "Please allow Spover to draw over other apps", Toast.LENGTH_LONG).show()
                 // Check that the user has granted permission, and prompt them if not
-                checkDrawOverlayPermission()
+                checkDrawOverlayPermission(true)
             }
         }
-        initUI()
+
+        overlaySwitch = findViewById(R.id.switchOverlayPermission)
+        overlaySwitch.isChecked = Settings.canDrawOverlays(this)
+        overlaySwitch.setOnCheckedChangeListener { _, isChecked ->
+            checkDrawOverlayPermission(isChecked)
+        }
+
+        speedSwitch = setupSettingsSwitch(R.id.switchShowSpeed, SpoverSettings.SHOW_CURRENT_SPEED)
+        speedLimitSwitch = setupSettingsSwitch(R.id.switchShowSpeedLimit, SpoverSettings.SHOW_SPEED_LIMIT)
+        soundAlertSwitch = setupSettingsSwitch(R.id.switchSoundAlert, SpoverSettings.SOUND_ALERT)
     }
 
-    private fun initUI() {
-
-        val preferences = this.getSharedPreferences(getString(R.string.pref_file_name), Context.MODE_PRIVATE)
-
-        speedSwitch = findViewById(R.id.switch_show_speed)
-        speedSwitch.isChecked =  preferences.getBoolean(getString(R.string.pref_show_speed), true)
-        speedSwitch.setOnClickListener {
-            with (preferences.edit()) {
-                putBoolean(getString(R.string.pref_show_speed), speedSwitch.isChecked)
-                apply()
-            }
-        }
-
-        speedLimitSwitch = findViewById(R.id.switch_show_speed_limit)
-        speedLimitSwitch.isChecked =  preferences.getBoolean(getString(R.string.pref_show_speed_limit), true)
-        speedLimitSwitch.setOnClickListener {
-            with (preferences.edit()) {
-                putBoolean(getString(R.string.pref_show_speed_limit), speedLimitSwitch.isChecked)
-                apply()
-            }
-        }
+    private fun setupSettingsSwitch(id: Int, setting: SpoverSettings<Boolean>): Switch {
+        val switch = findViewById<Switch>(id)
+        switch.isChecked = settings.get(setting)!!
+        switch.setOnCheckedChangeListener { _, isChecked -> settings.set(setting, isChecked) }
+        return switch
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        if (requestCode == 0) {
+        if (requestCode == LOCATION_PERMISSION_REQUEST) {
             if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                permissionSwitch.isChecked = true
+                locationPermissionSwitch.isChecked = true
             } else {
-                Log.e(tag, "Location permission not granted")
+                Log.e(TAG, "Location permission not granted")
             }
         }
     }
 
     private fun checkLocationPermission(isChecked: Boolean) {
-        Log.e(tag, "Location permission switch: $isChecked")
+        Log.e(TAG, "Location permission switch: $isChecked")
         if (!isChecked) {
             return
         }
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
-            Log.e(tag, "Did not grant location permission")
-            permissionSwitch.isChecked = false
+            Log.e(TAG, "Did not grant location permission")
+            locationPermissionSwitch.isChecked = false
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                             Manifest.permission.ACCESS_FINE_LOCATION)) {
-                Log.e(tag, "We should show permission rationale, but I don't know what that means")
+                Log.e(TAG, "We should show permission rationale, but I don't know what that means")
                 // Show an explanation to the user *asynchronously* -- don't block
                 // this thread waiting for the user's response! After the user
                 // sees the explanation, try again to request the permission.
             } else {
                 ActivityCompat.requestPermissions(this,
-                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                        0)
+                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST)
             }
         } else {
-            permissionSwitch.isChecked = true
-        }
-    }
-
-    fun setLocation(view: View) {
-        locationService.fetchLocation { loc ->
-            if (loc != null) {
-                latText.text = "${loc.latitude}"
-                lonText.text = "${loc.longitude}"
-            } else {
-                latText.text = "Could not fetch location"
-                lonText.text = "Could not fetch location"
-            }
+            locationPermissionSwitch.isChecked = true
         }
     }
 
@@ -126,26 +110,24 @@ class MainActivity : AppCompatActivity() {
         finish()
     }
 
-    private fun checkDrawOverlayPermission() {
-        if (!Settings.canDrawOverlays(this)) {
+    private fun checkDrawOverlayPermission(isChecked: Boolean) {
+        if ((!Settings.canDrawOverlays(this) && isChecked)
+                || (Settings.canDrawOverlays(this) && !isChecked)) {
             // launch Intent for settings to give overlay permission
             val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
-            startActivityForResult(intent, REQUEST_CODE)
+            startActivityForResult(intent, OVERLAY_PERMISSION_REQUEST)
         }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == REQUEST_CODE) {
-            if (Settings.canDrawOverlays(this)) {
-                launchOverlayService()
-            } else {
-                Toast.makeText(this, "Sorry. Can't draw overlays without permission...", Toast.LENGTH_SHORT).show()
-            }
+        if (requestCode == OVERLAY_PERMISSION_REQUEST) {
+            overlaySwitch.isChecked = Settings.canDrawOverlays(this)
         }
     }
 
     companion object {
         private var TAG = MainActivity::class.java.simpleName
-        const val REQUEST_CODE = 10101
+        const val OVERLAY_PERMISSION_REQUEST = 0
+        const val LOCATION_PERMISSION_REQUEST = 1
     }
 }
