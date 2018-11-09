@@ -7,6 +7,7 @@ import android.graphics.PixelFormat
 import android.graphics.Point
 import android.os.IBinder
 import android.util.Log
+import android.support.v4.view.GestureDetectorCompat
 import android.view.*
 import android.widget.RelativeLayout
 
@@ -110,16 +111,19 @@ class OverlayService : Service(), View.OnTouchListener {
     private var viewStartX = 0
     private var viewStartY = 0
     override fun onTouch(view: View, motionEvent: MotionEvent): Boolean {
+        val isEvent = { action: Int ->
+            action == motionEvent.action
+        }
 
         when {
-            motionEvent.action == MotionEvent.ACTION_DOWN -> {
+            isEvent(MotionEvent.ACTION_DOWN) -> {
                 touchStartX = motionEvent.rawX
                 touchStartY = motionEvent.rawY
 
                 viewStartX = params!!.x
                 viewStartY = params!!.y
             }
-            motionEvent.action == MotionEvent.ACTION_MOVE -> {
+            isEvent(MotionEvent.ACTION_MOVE) -> {
                 val dX = motionEvent.rawX - touchStartX
                 val dY = motionEvent.rawY - touchStartY
 
@@ -132,7 +136,7 @@ class OverlayService : Service(), View.OnTouchListener {
                     // FixMe
                 }
             }
-            motionEvent.action == MotionEvent.ACTION_UP -> {
+            isEvent(MotionEvent.ACTION_UP) -> {
                 if (shouldClose(params!!.y)) {
                     onDestroy()
                 } else {
