@@ -18,11 +18,11 @@ class LocationService(context: Context, val callback: LocationCallback) : Locati
         private const val SPEED_THRESHOLD = 1 / 3.6
     }
 
-    private val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
     private var lastLocation: Location? = null
     private var lastTime: Long = 0
 
     init {
+        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         if (ContextCompat.checkSelfPermission(context,
                         Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0f, this)

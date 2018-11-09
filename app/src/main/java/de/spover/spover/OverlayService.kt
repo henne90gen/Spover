@@ -5,11 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.graphics.Point
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
-import android.location.Location
 import android.os.IBinder
 import android.util.Log
 import android.view.*
@@ -18,29 +13,22 @@ import android.widget.RelativeLayout
 import android.widget.TextView
 import kotlin.math.roundToInt
 
-class OverlayService : Service(), View.OnTouchListener, SensorEventListener {
-
-    enum class Mode {
-        BRIGHT, DARK
-    }
-
-    private var lightMode = Mode.BRIGHT
+class OverlayService : Service(), View.OnTouchListener {
 
     private lateinit var settingsStore: SettingsStore
     private lateinit var locationService: LocationService
+    private lateinit var lightService: LightService
 
     private var windowManager: WindowManager? = null
     private var floatingView: View? = null
+
     private var params: WindowManager.LayoutParams? = null
-
-    private lateinit var sensorManager: SensorManager
-    private var lightSensor: Sensor? = null
-
     private lateinit var rlSpeed: RelativeLayout
     private lateinit var rlSpeedLimit: RelativeLayout
     private lateinit var ivSpeed: ImageView
     private lateinit var ivSpeedLimit: ImageView
     private lateinit var tvSpeed: TextView
+
     private lateinit var tvSpeedLimit: TextView
 
     override fun onBind(intent: Intent): IBinder? {
@@ -57,15 +45,10 @@ class OverlayService : Service(), View.OnTouchListener, SensorEventListener {
             tvSpeed.text = formatSpeed(it)
         }
 
-        windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        initLightSensor()
-        addOverlayView()
-    }
+        lightService = LightService(this, this::adaptToLightMode)
 
-    private fun initLightSensor() {
-        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
-        sensorManager.registerListener(this, lightSensor, SensorManager.SENSOR_DELAY_NORMAL)
+        windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        addOverlayView()
     }
 
     private fun formatSpeed(speedInMetersPerSecond: Double): String {
@@ -105,21 +88,8 @@ class OverlayService : Service(), View.OnTouchListener, SensorEventListener {
         }
     }
 
-    override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
-    }
-
-    override fun onSensorChanged(event: SensorEvent) {
-        if (event.values[0] < LIGHT_MODE_TRESHOLD && lightMode != Mode.DARK) {
-            lightMode = Mode.DARK
-            adaptToLightMode(lightMode)
-        } else if (event.values[0] >= LIGHT_MODE_TRESHOLD && lightMode != Mode.BRIGHT) {
-            lightMode = Mode.BRIGHT
-            adaptToLightMode(lightMode)
-        }
-    }
-
-    private fun adaptToLightMode(mode: Mode) {
-        if (mode == Mode.DARK) {
+    private fun adaptToLightMode(mode: LightMode) {
+        if (mode == LightMode.DARK) {
             ivSpeedLimit.setImageResource(R.drawable.ic_red_dark_icon)
             ivSpeed.setImageResource(R.drawable.ic_green_dark_icon)
             tvSpeed.setTextColor(getColor(R.color.colorTextLight))
@@ -138,7 +108,7 @@ class OverlayService : Service(), View.OnTouchListener, SensorEventListener {
             windowManager!!.removeView(floatingView)
             floatingView = null
         }
-        sensorManager.unregisterListener(this)
+        lightService.destroy()
         stopSelf()
     }
 
@@ -211,6 +181,5 @@ class OverlayService : Service(), View.OnTouchListener, SensorEventListener {
 
     companion object {
         private var TAG = OverlayService::class.java.simpleName
-        private var LIGHT_MODE_TRESHOLD = 70
     }
 }
