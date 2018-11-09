@@ -49,7 +49,12 @@ class OverlayService : Service(), View.OnTouchListener, SensorEventListener {
         Log.d(TAG, "created")
         locationService = LocationService(this)
         locationService.registerLocationCallback {
-
+            Log.e(TAG, "Got location update $it")
+            tvSpeed.text = it.speed.toString()
+        }
+        locationService.fetchLocation {
+            Log.e(TAG, "Got location $it")
+            tvSpeed.text = it.speed.toString()
         }
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         initLightSensor()
