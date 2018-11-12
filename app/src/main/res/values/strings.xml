@@ -8,7 +8,7 @@
     <!-- Permission descriptions -->
     <string name="overlay_permission">Display Spover on top of other apps</string>
     <string name="location_permission">Spover can access your location</string>
-    <string name="auto_launch_permission">Spover can launch automatically on startup of navigation apps</string>
+    <string name="auto_launch_permission">Spover can read notifications to detect when GMaps is running</string>
 
     <!-- Card titles-->
     <string name="permissions">Permissions</string>

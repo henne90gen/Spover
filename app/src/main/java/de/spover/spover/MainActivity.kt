@@ -17,19 +17,22 @@ import android.widget.Toast
 class MainActivity : AppCompatActivity() {
 
     private lateinit var settings: SettingsStore
+    private lateinit var permissions : PermissionManager
 
     private lateinit var overlayBtn: Button
-    private lateinit var overlaySwitch: Switch
     private lateinit var speedSwitch: Switch
     private lateinit var speedLimitSwitch: Switch
     private lateinit var soundAlertSwitch: Switch
 
     private lateinit var locationPermissionSwitch: Switch
+    private lateinit var overlayPermissionSwitch: Switch
+    private lateinit var notificationPermissionSwitch: Switch
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         settings = SettingsStore(this)
+        permissions = PermissionManager(this)
         initUI()
     }
 
@@ -38,22 +41,25 @@ class MainActivity : AppCompatActivity() {
         locationPermissionSwitch.setOnCheckedChangeListener { _, isChecked -> this.checkLocationPermission(isChecked) }
         checkLocationPermission(true)
 
+        overlayPermissionSwitch = findViewById(R.id.switchOverlayPermission)
+        overlayPermissionSwitch.isChecked = permissions.canDrawOverlays()
+        overlayPermissionSwitch.setOnCheckedChangeListener { _, isChecked ->
+            checkDrawOverlayPermission(isChecked)
+        }
+
+        notificationPermissionSwitch = findViewById(R.id.switchNotificationPermission)
+        notificationPermissionSwitch.isChecked = permissions.canReadNotifications()
+        notificationPermissionSwitch.setOnCheckedChangeListener { _, isChecked ->
+            checkNotificationPermission(isChecked)
+        }
+
         overlayBtn = findViewById(R.id.btnOverlay)
         overlayBtn.setOnClickListener {
             if (Settings.canDrawOverlays(this)) {
-                // Launch service right away - the user has already previously granted permission
                 launchOverlayService()
             } else {
                 Toast.makeText(this, "Please allow Spover to draw over other apps", Toast.LENGTH_LONG).show()
-                // Check that the user has granted permission, and prompt them if not
-                checkDrawOverlayPermission(true)
             }
-        }
-
-        overlaySwitch = findViewById(R.id.switchOverlayPermission)
-        overlaySwitch.isChecked = Settings.canDrawOverlays(this)
-        overlaySwitch.setOnCheckedChangeListener { _, isChecked ->
-            checkDrawOverlayPermission(isChecked)
         }
 
         speedSwitch = setupSettingsSwitch(R.id.switchShowSpeed, SpoverSettings.SHOW_CURRENT_SPEED)
@@ -63,7 +69,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupSettingsSwitch(id: Int, setting: SpoverSettings<Boolean>): Switch {
         val switch = findViewById<Switch>(id)
-        switch.isChecked = settings.get(setting)!!
+        switch.isChecked = settings.get(setting)
         switch.setOnCheckedChangeListener { _, isChecked -> settings.set(setting, isChecked) }
         return switch
     }
@@ -102,30 +108,38 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun launchOverlayService() {
-        val overlayService = Intent(this, OverlayService::class.java)
-        startService(overlayService)
-        finish()
+    private fun checkNotificationPermission(isChecked: Boolean) {
+        if (permissions.canReadNotifications().xor(isChecked)) {
+            startActivityForResult(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS), NOTIFICATION_PERMISSION_REQUEST)
+        }
     }
 
     private fun checkDrawOverlayPermission(isChecked: Boolean) {
-        if ((!Settings.canDrawOverlays(this) && isChecked)
-                || (Settings.canDrawOverlays(this) && !isChecked)) {
-            // launch Intent for settings to give overlay permission
+        if (permissions.canDrawOverlays().xor(isChecked)) {
             val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
             startActivityForResult(intent, OVERLAY_PERMISSION_REQUEST)
         }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        // double check in case the user hasn't given the permission in the ssettings activity
         if (requestCode == OVERLAY_PERMISSION_REQUEST) {
-            overlaySwitch.isChecked = Settings.canDrawOverlays(this)
+            overlayPermissionSwitch.isChecked = permissions.canDrawOverlays()
+        } else if (requestCode == NOTIFICATION_PERMISSION_REQUEST) {
+            notificationPermissionSwitch.isChecked = permissions.canReadNotifications()
         }
+    }
+
+    private fun launchOverlayService() {
+        val overlayService = Intent(this, OverlayService::class.java)
+        startService(overlayService)
+        finish()
     }
 
     companion object {
         private var TAG = MainActivity::class.java.simpleName
         const val OVERLAY_PERMISSION_REQUEST = 0
         const val LOCATION_PERMISSION_REQUEST = 1
+        const val NOTIFICATION_PERMISSION_REQUEST = 2
     }
 }

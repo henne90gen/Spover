@@ -15,6 +15,10 @@ import kotlin.math.roundToInt
 
 class OverlayService : Service(), View.OnTouchListener {
 
+    companion object {
+        private var TAG = OverlayService::class.java.simpleName
+    }
+
     private lateinit var settingsStore: SettingsStore
     private lateinit var locationService: LocationService
     private lateinit var lightService: LightService
@@ -177,9 +181,5 @@ class OverlayService : Service(), View.OnTouchListener {
             }
         }
         return true
-    }
-
-    companion object {
-        private var TAG = OverlayService::class.java.simpleName
     }
 }
