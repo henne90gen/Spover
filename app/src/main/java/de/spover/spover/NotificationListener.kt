@@ -25,20 +25,20 @@ class NotificationListener : NotificationListenerService() {
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         // Todo check what kind of notification had been posted
         if (isGmapsNavNotification(sbn)
-                && shouldDisplayOverlay()
-                && !isOverlayServiceRunning()) {
+                && !isOverlayServiceRunning()
+                && shouldDisplayOverlay()) {
             launchOverlayService()
         }
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
-        if (isOverlayServiceRunning()) {
+        if (isGmapsNavNotification(sbn) && isOverlayServiceRunning()) {
             stopOverlayService()
         }
     }
 
     private fun isGmapsNavNotification(sbn: StatusBarNotification): Boolean {
-        return sbn.packageName == GOOGLE_MAPS_PACKAGE
+        return sbn.packageName == GOOGLE_MAPS_PACKAGE && !sbn.isClearable
     }
 
     private fun launchOverlayService() {
@@ -47,6 +47,7 @@ class NotificationListener : NotificationListenerService() {
     }
 
     private fun stopOverlayService() {
+        Log.d(TAG, "overlay closed by notification listener")
         stopService(Intent(this, OverlayService::class.java))
     }
 

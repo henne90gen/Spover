@@ -57,8 +57,10 @@ class MainActivity : AppCompatActivity() {
         overlayBtn.setOnClickListener {
             if (Settings.canDrawOverlays(this) && shouldDisplayOverlay()) {
                 launchOverlayService()
-            } else {
+            } else if (!Settings.canDrawOverlays(this)) {
                 Toast.makeText(this, "Please allow Spover to draw over other apps", Toast.LENGTH_LONG).show()
+            } else if (!shouldDisplayOverlay()) {
+                Toast.makeText(this, "All UI elements got disabled, enable showing speed or speed limit first", Toast.LENGTH_LONG).show()
             }
         }
 
@@ -142,7 +144,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun shouldDisplayOverlay(): Boolean {
         return settings.get(SpoverSettings.SHOW_CURRENT_SPEED)
-                && settings.get(SpoverSettings.SHOW_SPEED_LIMIT)
+                || settings.get(SpoverSettings.SHOW_SPEED_LIMIT)
     }
 
 
