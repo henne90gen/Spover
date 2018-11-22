@@ -16,8 +16,6 @@ class NotificationListener : NotificationListenerService() {
 
     private lateinit var settings: SettingsStore
 
-    private var openedOverlayViaNotification = false
-
     override fun onCreate() {
         super.onCreate()
 
@@ -35,7 +33,6 @@ class NotificationListener : NotificationListenerService() {
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
         if (isGmapsNavNotification(sbn)) {
-            openedOverlayViaNotification = false
             setReopenFlag(true)
             if (isOverlayServiceRunning()) {
                 stopOverlayService()
@@ -49,7 +46,6 @@ class NotificationListener : NotificationListenerService() {
 
     private fun launchOverlayService() {
         Log.d(TAG, "detected Gmaps nav start, started overlay")
-        openedOverlayViaNotification = true
         startService(Intent(this, OverlayService::class.java))
     }
 

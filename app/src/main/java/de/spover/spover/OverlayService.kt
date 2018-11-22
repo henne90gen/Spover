@@ -69,7 +69,12 @@ class OverlayService : Service(), View.OnTouchListener {
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED,
                 PixelFormat.TRANSLUCENT)
 
-        params!!.gravity = Gravity.TOP or Gravity.START// or Gravity.START
+        params!!.gravity = Gravity.TOP or Gravity.START
+
+        if (settingsStore.get(SpoverSettings.FIRST_LAUNCH)) {
+            setFirstLaunchPos()
+        }
+
         params!!.x = settingsStore.get(SpoverSettings.OVERLAY_X)
         params!!.y = settingsStore.get(SpoverSettings.OVERLAY_Y)
 
@@ -91,6 +96,18 @@ class OverlayService : Service(), View.OnTouchListener {
             it.setOnTouchListener(this)
             windowManager?.addView(floatingView, params)
         }
+    }
+
+    /**
+     * set overlay position on first launch to somewhere right around vertical center
+     */
+    private fun setFirstLaunchPos() {
+        val displaySize = Point()
+        windowManager!!.defaultDisplay.getSize(displaySize)
+        val y = (displaySize.y) / 2
+        val x = (displaySize.x)
+        storePrefPosition(x, y)
+        settingsStore.set(SpoverSettings.FIRST_LAUNCH, false)
     }
 
     private fun adaptToLightMode(mode: LightMode) {

@@ -2,6 +2,7 @@ package de.spover.spover
 
 class SpoverSettings<T> private constructor(val defaultValue: T, val name: String) {
     companion object {
+        val FIRST_LAUNCH = SpoverSettings(true, "FIRST_LAUNCH")
         val SHOW_CURRENT_SPEED = SpoverSettings(true, "SHOW_CURRENT_SPEED")
         val SHOW_SPEED_LIMIT = SpoverSettings(true, "SHOW_SPEED_LIMIT")
         val OVERLAY_X = SpoverSettings(0, "OVERLAY_X")
