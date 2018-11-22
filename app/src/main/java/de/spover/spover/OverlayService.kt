@@ -65,6 +65,7 @@ class OverlayService : Service(), View.OnTouchListener {
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                // FLAG_SHOW_WHEN_LOCKED is deprecated, but the new method is only available for activities and the overlay is a service
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED,
                 PixelFormat.TRANSLUCENT)
 
@@ -115,6 +116,11 @@ class OverlayService : Service(), View.OnTouchListener {
         lightService.destroy()
         stopSelf()
     }
+
+    private fun storeReopenFlag(value: Boolean) {
+        settingsStore.set(SpoverSettings.REOPEN_FLAG, false)
+    }
+
 
     private fun storePrefPosition(x: Int, y: Int) {
         settingsStore.set(SpoverSettings.OVERLAY_X, x)
@@ -175,6 +181,7 @@ class OverlayService : Service(), View.OnTouchListener {
             isEvent(MotionEvent.ACTION_UP) -> {
                 if (shouldClose(params!!.y)) {
                     onDestroy()
+                    storeReopenFlag(false)
                 } else {
                     storePrefPosition(params!!.x, params!!.y)
                 }

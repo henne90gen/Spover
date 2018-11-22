@@ -16,6 +16,8 @@ class NotificationListener : NotificationListenerService() {
 
     private lateinit var settings: SettingsStore
 
+    private var openedOverlayViaNotification = false
+
     override fun onCreate() {
         super.onCreate()
 
@@ -32,8 +34,12 @@ class NotificationListener : NotificationListenerService() {
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
-        if (isGmapsNavNotification(sbn) && isOverlayServiceRunning()) {
-            stopOverlayService()
+        if (isGmapsNavNotification(sbn)) {
+            openedOverlayViaNotification = false
+            setReopenFlag(true)
+            if (isOverlayServiceRunning()) {
+                stopOverlayService()
+            }
         }
     }
 
@@ -43,6 +49,7 @@ class NotificationListener : NotificationListenerService() {
 
     private fun launchOverlayService() {
         Log.d(TAG, "detected Gmaps nav start, started overlay")
+        openedOverlayViaNotification = true
         startService(Intent(this, OverlayService::class.java))
     }
 
@@ -62,12 +69,17 @@ class NotificationListener : NotificationListenerService() {
         return false
     }
 
-    /** ToDo refactor since same functionality is needed in NotificationListener
+    private fun setReopenFlag(value: Boolean) {
+        settings.set(SpoverSettings.REOPEN_FLAG, value)
+    }
+
+    /**
      * returns true if the overlay service displays an UI, since it's not useful
      * to open an overlay without an UI and therefore no possibility to close it
      */
     private fun shouldDisplayOverlay(): Boolean {
-        return settings.get(SpoverSettings.SHOW_CURRENT_SPEED)
-                && settings.get(SpoverSettings.SHOW_SPEED_LIMIT)
+        return (settings.get(SpoverSettings.SHOW_CURRENT_SPEED)
+                || settings.get(SpoverSettings.SHOW_SPEED_LIMIT))
+                && settings.get(SpoverSettings.REOPEN_FLAG)
     }
 }
