@@ -55,7 +55,7 @@ class MainActivity : AppCompatActivity() {
 
         overlayBtn = findViewById(R.id.btnOverlay)
         overlayBtn.setOnClickListener {
-            if (Settings.canDrawOverlays(this)) {
+            if (Settings.canDrawOverlays(this) && shouldDisplayOverlay()) {
                 launchOverlayService()
             } else {
                 Toast.makeText(this, "Please allow Spover to draw over other apps", Toast.LENGTH_LONG).show()
@@ -122,7 +122,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        // double check in case the user hasn't given the permission in the ssettings activity
+        // double check in case the user hasn't given the permission in the settings activity
         if (requestCode == OVERLAY_PERMISSION_REQUEST) {
             overlayPermissionSwitch.isChecked = permissions.canDrawOverlays()
         } else if (requestCode == NOTIFICATION_PERMISSION_REQUEST) {
@@ -135,6 +135,16 @@ class MainActivity : AppCompatActivity() {
         startService(overlayService)
         finish()
     }
+
+    /** ToDo refactor since same functionality is needed in NotificationListener
+     * returns true if the overlay service displays an UI, since it's not useful
+     * to open an overlay without an UI and therefore no possibility to close it
+     */
+    private fun shouldDisplayOverlay(): Boolean {
+        return settings.get(SpoverSettings.SHOW_CURRENT_SPEED)
+                && settings.get(SpoverSettings.SHOW_SPEED_LIMIT)
+    }
+
 
     companion object {
         private var TAG = MainActivity::class.java.simpleName

@@ -14,9 +14,19 @@ class NotificationListener : NotificationListenerService() {
         private const val GOOGLE_MAPS_PACKAGE = "com.google.android.apps.maps"
     }
 
+    private lateinit var settings: SettingsStore
+
+    override fun onCreate() {
+        super.onCreate()
+
+        settings = SettingsStore(this)
+    }
+
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        // Implement what you want here
-        if (isGmapsNavNotification(sbn) && !isOverlayServiceRunning()) {
+        // Todo check what kind of notification had been posted
+        if (isGmapsNavNotification(sbn)
+                && shouldDisplayOverlay()
+                && !isOverlayServiceRunning()) {
             launchOverlayService()
         }
     }
@@ -49,5 +59,14 @@ class NotificationListener : NotificationListenerService() {
             }
         }
         return false
+    }
+
+    /** ToDo refactor since same functionality is needed in NotificationListener
+     * returns true if the overlay service displays an UI, since it's not useful
+     * to open an overlay without an UI and therefore no possibility to close it
+     */
+    private fun shouldDisplayOverlay(): Boolean {
+        return settings.get(SpoverSettings.SHOW_CURRENT_SPEED)
+                && settings.get(SpoverSettings.SHOW_SPEED_LIMIT)
     }
 }
