@@ -74,7 +74,10 @@ class MainActivity : AppCompatActivity() {
     private fun setupSettingsSwitch(id: Int, setting: SpoverSettings<Boolean>): Switch {
         val switch = findViewById<Switch>(id)
         switch.isChecked = settings.get(setting)
-        switch.setOnCheckedChangeListener { _, isChecked -> settings.set(setting, isChecked) }
+        switch.setOnCheckedChangeListener { _, isChecked ->
+            settings.set(setting, isChecked)
+            overlayHelper.restartOverlayService()
+        }
         return switch
     }
 

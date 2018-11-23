@@ -42,4 +42,13 @@ class OverlayServiceHelper(val context: Context) {
         Log.d(TAG, "stopped overlay service")
         context.stopService(Intent(context, OverlayService::class.java))
     }
+
+    fun restartOverlayService() {
+        if (isOverlayServiceRunning()) {
+            stopOverlayService()
+        }
+        if (displaysAnUI()) {
+            launchOverlayService()
+        }
+    }
 }
