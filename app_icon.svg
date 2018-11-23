@@ -27,9 +27,9 @@
      inkscape:window-height="1001"
      id="namedview1851"
      showgrid="false"
-     inkscape:zoom="2.0359279"
-     inkscape:cx="463.9314"
-     inkscape:cy="739.82712"
+     inkscape:zoom="1.0179639"
+     inkscape:cx="286.43014"
+     inkscape:cy="609.59806"
      inkscape:window-x="-9"
      inkscape:window-y="-9"
      inkscape:window-maximized="1"
@@ -49,21 +49,30 @@
     </rdf:RDF>
   </metadata>
   <circle
-     style="fill:#000000;fill-opacity:0.31521744;stroke:none;stroke-width:0.76546395;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     style="fill:#000000;fill-opacity:0.31521744;stroke:none;stroke-width:1.19611263;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
      id="path4747"
-     cx="113.18864"
-     cy="98.285095"
-     r="39.689522" />
+     cx="90.859383"
+     cy="120.66109"
+     r="62.018776"
+     inkscape:export-filename="C:\Users\max\Projects\AndroidStudioProjects\Spover\app\src\main\res\mipmap-xhdpi\ic_launcher_round.png"
+     inkscape:export-xdpi="19.638006"
+     inkscape:export-ydpi="19.638006" />
   <ellipse
-     style="display:inline;fill:#c7dde9;fill-opacity:1;stroke:none;stroke-width:0.73195422;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     style="display:inline;fill:#c7dde9;fill-opacity:1;stroke:none;stroke-width:1.14375031;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
      id="path4747-8"
-     cx="113.23402"
-     cy="96.331123"
-     rx="38.085907"
-     ry="37.818638" />
+     cx="90.93029"
+     cy="117.60782"
+     rx="59.51297"
+     ry="59.095333"
+     inkscape:export-filename="C:\Users\max\Projects\AndroidStudioProjects\Spover\app\src\main\res\mipmap-xhdpi\ic_launcher_round.png"
+     inkscape:export-xdpi="19.638006"
+     inkscape:export-ydpi="19.638006" />
   <g
      id="g5752"
-     transform="matrix(1.2323666,0,0,1.2323666,72.852139,-36.475292)">
+     transform="matrix(1.9256938,0,0,1.9256938,27.829645,-89.915243)"
+     inkscape:export-filename="C:\Users\max\Projects\AndroidStudioProjects\Spover\app\src\main\res\mipmap-xhdpi\ic_launcher_round.png"
+     inkscape:export-xdpi="19.638006"
+     inkscape:export-ydpi="19.638006">
     <rect
        ry="0.92706752"
        y="101.44077"
@@ -98,12 +107,18 @@
   </g>
   <path
      inkscape:connector-curvature="0"
-     style="display:inline;fill:#727272;fill-opacity:1;stroke:none;stroke-width:0.73195422;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-     d="M 84.529208,121.1156 A 38.085906,37.818637 0 0 0 113.23391,134.14995 38.085906,37.818637 0 0 0 141.9686,121.1156 Z"
-     id="path4747-8-2" />
+     style="display:inline;fill:#727272;fill-opacity:1;stroke:none;stroke-width:1.14375031;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     d="M 46.076212,156.336 A 59.512968,59.095334 0 0 0 90.930128,176.70345 59.512968,59.095334 0 0 0 135.8309,156.336 Z"
+     id="path4747-8-2"
+     inkscape:export-filename="C:\Users\max\Projects\AndroidStudioProjects\Spover\app\src\main\res\mipmap-xhdpi\ic_launcher_round.png"
+     inkscape:export-xdpi="19.638006"
+     inkscape:export-ydpi="19.638006" />
   <g
      id="g5745"
-     transform="matrix(1.2323666,0,0,1.2323666,65.004553,28.867873)">
+     transform="matrix(1.9256938,0,0,1.9256938,15.567022,12.189868)"
+     inkscape:export-filename="C:\Users\max\Projects\AndroidStudioProjects\Spover\app\src\main\res\mipmap-xhdpi\ic_launcher_round.png"
+     inkscape:export-xdpi="19.638006"
+     inkscape:export-ydpi="19.638006">
     <rect
        ry="1.286521"
        rx="1.2864978"

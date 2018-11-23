@@ -10,6 +10,10 @@
     <string name="location_permission">Spover can access your location</string>
     <string name="auto_launch_permission">Spover can read notifications to detect when GMaps is running</string>
 
+    <!-- Toast hints -->
+    <string name="toast_overlay_perm_missing">Please allow Spover to draw over other apps</string>
+    <string name="toast_no_ui_visible">"All UI elements got disabled, enable showing speed or speed limit first"</string>
+
     <!-- Card titles-->
     <string name="permissions">Permissions</string>
     <string name="overlay">Overlay</string>

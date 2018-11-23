@@ -17,7 +17,8 @@ import android.widget.Toast
 class MainActivity : AppCompatActivity() {
 
     private lateinit var settings: SettingsStore
-    private lateinit var permissions : PermissionManager
+    private lateinit var permissions: PermissionManager
+    private lateinit var overlayHelper: OverlayServiceHelper
 
     private lateinit var overlayBtn: Button
     private lateinit var speedSwitch: Switch
@@ -33,6 +34,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         settings = SettingsStore(this)
         permissions = PermissionManager(this)
+        overlayHelper = OverlayServiceHelper(this)
         initUI()
     }
 
@@ -55,12 +57,12 @@ class MainActivity : AppCompatActivity() {
 
         overlayBtn = findViewById(R.id.btnOverlay)
         overlayBtn.setOnClickListener {
-            if (Settings.canDrawOverlays(this) && shouldDisplayOverlay()) {
-                launchOverlayService()
+            if (Settings.canDrawOverlays(this) && overlayHelper.displaysAnUI()) {
+                overlayHelper.launchOverlayService()
             } else if (!Settings.canDrawOverlays(this)) {
-                Toast.makeText(this, "Please allow Spover to draw over other apps", Toast.LENGTH_LONG).show()
-            } else if (!shouldDisplayOverlay()) {
-                Toast.makeText(this, "All UI elements got disabled, enable showing speed or speed limit first", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, getString(R.string.toast_overlay_perm_missing), Toast.LENGTH_LONG).show()
+            } else if (!overlayHelper.displaysAnUI()) {
+                Toast.makeText(this, getString(R.string.toast_no_ui_visible), Toast.LENGTH_LONG).show()
             }
         }
 
@@ -131,22 +133,6 @@ class MainActivity : AppCompatActivity() {
             notificationPermissionSwitch.isChecked = permissions.canReadNotifications()
         }
     }
-
-    private fun launchOverlayService() {
-        val overlayService = Intent(this, OverlayService::class.java)
-        startService(overlayService)
-        finish()
-    }
-
-    /** ToDo refactor since same functionality is needed in NotificationListener
-     * returns true if the overlay service displays an UI, since it's not useful
-     * to open an overlay without an UI and therefore no possibility to close it
-     */
-    private fun shouldDisplayOverlay(): Boolean {
-        return settings.get(SpoverSettings.SHOW_CURRENT_SPEED)
-                || settings.get(SpoverSettings.SHOW_SPEED_LIMIT)
-    }
-
 
     companion object {
         private var TAG = MainActivity::class.java.simpleName
