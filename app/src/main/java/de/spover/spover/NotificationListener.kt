@@ -20,7 +20,6 @@ class NotificationListener : NotificationListenerService() {
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        // Todo check what kind of notification had been posted
         if (isGmapsNavNotification(sbn)
                 && !overlayHelper.isOverlayServiceRunning()
                 && overlayHelper.displaysAnUI()

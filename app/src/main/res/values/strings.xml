@@ -13,6 +13,7 @@
     <!-- Toast hints -->
     <string name="toast_overlay_perm_missing">Please allow Spover to draw over other apps</string>
     <string name="toast_no_ui_visible">"All UI elements got disabled, enable showing speed or speed limit first"</string>
+    <string name="toast_remove_location_access"><![CDATA[Can\'t remove granted permission from inside the app. Please go to \'app info\' -> \'permissions\' and turn it off there.]]></string>
 
     <!-- Card titles-->
     <string name="permissions">Permissions</string>
@@ -24,12 +25,4 @@
 
     <string name="warning_option">Sound alert on speeding</string>
     <string name="et_warning_threshold">Threshold:</string>
-
-    <!-- Shared Preferences-->
-    <string name="pref_file_name" translatable="false">pref_file_name</string>
-    <string name="pref_show_speed" translatable="false">pref_show_speed</string>
-    <string name="pref_show_speed_limit" translatable="false">pref_show_speed_limit</string>
-    <string name="pref_overlay_x" translatable="false">pref_overlay_x</string>
-    <string name="pref_overlay_y" translatable="false">pref_overlay_y</string>
-
 </resources>

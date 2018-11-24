@@ -1,8 +1,11 @@
 package de.spover.spover
 
+import android.Manifest
 import android.content.ComponentName
 import android.content.Context
+import android.content.pm.PackageManager
 import android.provider.Settings
+import android.support.v4.content.ContextCompat
 import android.text.TextUtils
 
 class PermissionManager(var context: Context) {
@@ -31,5 +34,10 @@ class PermissionManager(var context: Context) {
             }
         }
         return false
+    }
+
+    fun canAccessLocation(): Boolean {
+        return ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
+                PackageManager.PERMISSION_GRANTED
     }
 }

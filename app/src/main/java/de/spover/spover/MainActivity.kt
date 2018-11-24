@@ -81,37 +81,19 @@ class MainActivity : AppCompatActivity() {
         return switch
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        if (requestCode == LOCATION_PERMISSION_REQUEST) {
-            if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                locationPermissionSwitch.isChecked = true
-            } else {
-                Log.e(TAG, "Location permission not granted")
-            }
-        }
-    }
-
     private fun checkLocationPermission(isChecked: Boolean) {
-        Log.e(TAG, "Location permission switch: $isChecked")
-        if (!isChecked) {
-            return
-        }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
+        if (!permissions.canAccessLocation() && isChecked) {
             Log.e(TAG, "Did not grant location permission")
             locationPermissionSwitch.isChecked = false
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                            Manifest.permission.ACCESS_FINE_LOCATION)) {
-                Log.e(TAG, "We should show permission rationale, but I don't know what that means")
-                // Show an explanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-            } else {
-                ActivityCompat.requestPermissions(this,
-                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST)
-            }
-        } else {
-            locationPermissionSwitch.isChecked = true
+            // if permission got denied the first time the next time the permission dialog opens
+            // a "never ask again" option appears. That case can somehow get covered by PermissionRationale
+            //if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) { } else {
+            ActivityCompat.requestPermissions(this,
+                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST)
+        } else if (permissions.canAccessLocation() && !isChecked) {
+            // ToDo maybe it's possible to open the specific settings activity with an intent
+            Toast.makeText(this, getString(R.string.toast_remove_location_access), Toast.LENGTH_LONG).show()
+            locationPermissionSwitch.isChecked = permissions.canAccessLocation()
         }
     }
 
@@ -136,6 +118,14 @@ class MainActivity : AppCompatActivity() {
             notificationPermissionSwitch.isChecked = permissions.canReadNotifications()
         }
     }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if (requestCode == LOCATION_PERMISSION_REQUEST) {
+            locationPermissionSwitch.isChecked =
+                    (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+        }
+    }
+
 
     companion object {
         private var TAG = MainActivity::class.java.simpleName

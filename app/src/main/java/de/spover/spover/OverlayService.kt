@@ -41,7 +41,6 @@ class OverlayService : Service(), View.OnTouchListener {
 
     override fun onCreate() {
         super.onCreate()
-        Log.d(TAG, "created")
 
         settingsStore = SettingsStore(this)
 
@@ -154,7 +153,6 @@ class OverlayService : Service(), View.OnTouchListener {
 
     /**
      * returns if the overlay is close enough to the bottom so it should get closed
-     *
      * @param y - y value of touch up position
      */
     private fun shouldClose(y: Int): Boolean {
