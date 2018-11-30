@@ -4,6 +4,8 @@ import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import de.spover.spover.settings.SettingsStore
+import de.spover.spover.settings.SpoverSettings
 
 class OverlayServiceHelper(val context: Context) {
 

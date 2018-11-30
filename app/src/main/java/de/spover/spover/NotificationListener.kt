@@ -2,6 +2,8 @@ package de.spover.spover
 
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import de.spover.spover.settings.SettingsStore
+import de.spover.spover.settings.SpoverSettings
 
 class NotificationListener : NotificationListenerService() {
     companion object {

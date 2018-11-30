@@ -15,6 +15,9 @@ class SpeedLimitService(context: Context, val callback: SpeedLimitChangedCallbac
     }
 
     private fun saveCurrentLocation(location: Location) {
+        if (currentLocation == null) {
+            return
+        }
         if (location.distanceTo(currentLocation) < 20) {
             return
         }

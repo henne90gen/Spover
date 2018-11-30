@@ -22,6 +22,8 @@ class LocationService(context: Context, val speedCallback: SpeedCallback?, val l
     private var lastLocation: Location? = null
     private var lastTime: Long = 0
 
+    private val speedList = ArrayList<Double>()
+
     init {
         val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         if (ContextCompat.checkSelfPermission(context,
@@ -41,6 +43,11 @@ class LocationService(context: Context, val speedCallback: SpeedCallback?, val l
             val timeDiffInSeconds = timeDiff / 1000.0
             var speed = distance / timeDiffInSeconds
             if (speed < SPEED_THRESHOLD) {
+                // otherwise speed will sit at 1 km/h when we are not moving
+                speed = 0.0
+            }
+            speed = calculateMovingWeightedAverage(speed)
+            if (speed == Double.NaN) {
                 speed = 0.0
             }
             speedCallback?.invoke(speed)
@@ -48,6 +55,21 @@ class LocationService(context: Context, val speedCallback: SpeedCallback?, val l
         lastLocation = location
         lastTime = currentTime
         locationCallback?.invoke(location)
+    }
+
+    private fun calculateMovingWeightedAverage(speed: Double): Double {
+        speedList.add(speed)
+        var median = 0.0
+        var div = 0.0
+        for (i in 1..speedList.size) {
+            median += speedList[i - 1] * i
+            div += i
+        }
+        median /= div
+        while (speedList.size > 100) {
+            speedList.removeAt(0)
+        }
+        return median
     }
 
     override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {
