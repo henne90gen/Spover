@@ -1,4 +1,4 @@
-package de.spover.spover
+package de.spover.spover.settings
 
 import android.content.Context
 import android.content.SharedPreferences

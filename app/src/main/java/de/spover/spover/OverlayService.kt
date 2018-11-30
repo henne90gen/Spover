@@ -11,6 +11,8 @@ import android.view.*
 import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
+import de.spover.spover.settings.SettingsStore
+import de.spover.spover.settings.SpoverSettings
 import kotlin.math.roundToInt
 
 class OverlayService : Service(), View.OnTouchListener {
@@ -21,6 +23,7 @@ class OverlayService : Service(), View.OnTouchListener {
 
     private lateinit var settingsStore: SettingsStore
     private lateinit var locationService: LocationService
+    private lateinit var speedLimitService: SpeedLimitService
     private lateinit var lightService: LightService
 
     private var windowManager: WindowManager? = null
@@ -44,9 +47,8 @@ class OverlayService : Service(), View.OnTouchListener {
 
         settingsStore = SettingsStore(this)
 
-        locationService = LocationService(this) {
-            tvSpeed.text = formatSpeed(it)
-        }
+        locationService = LocationService(this, this::setSpeed, null)
+        speedLimitService = SpeedLimitService(this, this::setSpeedLimit)
 
         lightService = LightService(this, this::adaptToLightMode)
 
@@ -54,9 +56,14 @@ class OverlayService : Service(), View.OnTouchListener {
         addOverlayView()
     }
 
-    private fun formatSpeed(speedInMetersPerSecond: Double): String {
+    private fun setSpeed(speedInMetersPerSecond: Double) {
         val speedInKilometersPerHour: Int = (speedInMetersPerSecond * 3.6).roundToInt()
-        return speedInKilometersPerHour.toString()
+        tvSpeed.text = speedInKilometersPerHour.toString()
+    }
+
+    private fun setSpeedLimit(speedLimitInMetersPerSecond: Double) {
+        val speedInKilometersPerHour: Int = (speedLimitInMetersPerSecond * 3.6).roundToInt()
+        tvSpeedLimit.text = speedInKilometersPerHour.toString()
     }
 
     private fun addOverlayView() {

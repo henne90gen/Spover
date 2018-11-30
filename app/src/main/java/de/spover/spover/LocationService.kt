@@ -10,9 +10,10 @@ import android.os.Bundle
 import android.support.v4.content.ContextCompat
 import android.util.Log
 
-typealias LocationCallback = (Double) -> Unit
+typealias SpeedCallback = (Double) -> Unit
+typealias LocationCallback = (Location) -> Unit
 
-class LocationService(context: Context, val callback: LocationCallback) : LocationListener {
+class LocationService(context: Context, val speedCallback: SpeedCallback?, val locationCallback: LocationCallback?) : LocationListener {
     companion object {
         private val TAG = LocationService::class.java.simpleName
         private const val SPEED_THRESHOLD = 1 / 3.6
@@ -42,10 +43,11 @@ class LocationService(context: Context, val callback: LocationCallback) : Locati
             if (speed < SPEED_THRESHOLD) {
                 speed = 0.0
             }
-            callback(speed)
+            speedCallback?.invoke(speed)
         }
         lastLocation = location
         lastTime = currentTime
+        locationCallback?.invoke(location)
     }
 
     override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {

@@ -1,6 +1,9 @@
 package de.spover.spover
 
 import android.Manifest
+import android.app.job.JobInfo
+import android.app.job.JobScheduler
+import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -13,12 +16,19 @@ import android.util.Log
 import android.widget.Button
 import android.widget.Switch
 import android.widget.Toast
+import de.spover.spover.network.NetworkFragment
+import de.spover.spover.network.OpenStreetMapsClient
+import de.spover.spover.settings.SettingsStore
+import de.spover.spover.settings.SpoverSettings
+
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var settings: SettingsStore
     private lateinit var permissions: PermissionManager
     private lateinit var overlayHelper: OverlayServiceHelper
+
+    private var networkFragment: NetworkFragment? = null
 
     private lateinit var overlayBtn: Button
     private lateinit var speedSwitch: Switch
@@ -35,6 +45,11 @@ class MainActivity : AppCompatActivity() {
         settings = SettingsStore(this)
         permissions = PermissionManager(this)
         overlayHelper = OverlayServiceHelper(this)
+
+        scheduleOSMClient(this)
+
+        networkFragment = NetworkFragment.getInstance(supportFragmentManager)
+
         initUI()
     }
 
@@ -132,5 +147,7 @@ class MainActivity : AppCompatActivity() {
         const val OVERLAY_PERMISSION_REQUEST = 0
         const val LOCATION_PERMISSION_REQUEST = 1
         const val NOTIFICATION_PERMISSION_REQUEST = 2
+
+        const val OSM_CLIENT_ID = 0
     }
 }
