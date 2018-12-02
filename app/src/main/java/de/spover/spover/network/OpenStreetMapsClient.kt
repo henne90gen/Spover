@@ -1,12 +1,8 @@
 package de.spover.spover.network
 
-import android.app.Service
 import android.app.job.JobParameters
 import android.app.job.JobService
-import android.content.Intent
-import android.os.IBinder
 import android.util.Log
-import de.spover.spover.scheduleOSMClient
 import java.io.*
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection

@@ -35,7 +35,7 @@ class LocationService(context: Context, val speedCallback: SpeedCallback?, val l
     }
 
     override fun onLocationChanged(location: Location) {
-        Log.d(TAG, "Received location update: $location")
+        //Log.d(TAG, "Received location update: $location")
         val currentTime = System.currentTimeMillis()
         lastLocation?.let {
             val distance = location.distanceTo(it)

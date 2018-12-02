@@ -28,7 +28,8 @@ class OverlayServiceHelper(val context: Context) {
 
     /**
      * returns true if the overlay service displays an UI, since it's not useful
-     * to open an overlay without an UI and therefore no possibility to close it
+     * to open an service without an UI and therefore no possibility to close it
+     * (except in app settings)
      */
     fun displaysAnUI(): Boolean {
         return (settings.get(SpoverSettings.SHOW_CURRENT_SPEED)

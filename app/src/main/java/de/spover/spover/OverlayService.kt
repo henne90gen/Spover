@@ -61,9 +61,9 @@ class OverlayService : Service(), View.OnTouchListener {
         tvSpeed.text = speedInKilometersPerHour.toString()
     }
 
-    private fun setSpeedLimit(speedLimitInMetersPerSecond: Double) {
-        val speedInKilometersPerHour: Int = (speedLimitInMetersPerSecond * 3.6).roundToInt()
-        tvSpeedLimit.text = speedInKilometersPerHour.toString()
+    // OSM provides speed limits in km/h
+    private fun setSpeedLimit(speedLimitInKph: Int) {
+        tvSpeedLimit.text = speedLimitInKph.toString()
     }
 
     private fun addOverlayView() {
