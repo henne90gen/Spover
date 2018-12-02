@@ -7,12 +7,16 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.support.v4.app.ActivityCompat
-import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
+import android.text.TextWatcher
 import android.util.Log
 import android.widget.Button
+import android.widget.EditText
 import android.widget.Switch
 import android.widget.Toast
+import android.text.Editable
+
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -20,14 +24,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var permissions: PermissionManager
     private lateinit var overlayHelper: OverlayServiceHelper
 
+    private lateinit var locationPermissionSwitch: Switch
+    private lateinit var overlayPermissionSwitch: Switch
+    private lateinit var notificationPermissionSwitch: Switch
+
     private lateinit var overlayBtn: Button
     private lateinit var speedSwitch: Switch
     private lateinit var speedLimitSwitch: Switch
     private lateinit var soundAlertSwitch: Switch
-
-    private lateinit var locationPermissionSwitch: Switch
-    private lateinit var overlayPermissionSwitch: Switch
-    private lateinit var notificationPermissionSwitch: Switch
+    private lateinit var speedThresholdET: EditText
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,6 +74,14 @@ class MainActivity : AppCompatActivity() {
         speedSwitch = setupSettingsSwitch(R.id.switchShowSpeed, SpoverSettings.SHOW_CURRENT_SPEED)
         speedLimitSwitch = setupSettingsSwitch(R.id.switchShowSpeedLimit, SpoverSettings.SHOW_SPEED_LIMIT)
         soundAlertSwitch = setupSettingsSwitch(R.id.switchSoundAlert, SpoverSettings.SOUND_ALERT)
+
+        speedThresholdET.addTextChangedListener(object : TextWatcher {
+            override fun onTextChanged(c: CharSequence, start: Int, before: Int, count: Int) {
+                settings.set(SpoverSettings.SPEED_THRESHOLD, c.toString().toInt())
+            }
+            override fun beforeTextChanged(c: CharSequence, start: Int, count: Int, after: Int) {}
+            override fun afterTextChanged(c: Editable) {}
+        })
     }
 
     private fun setupSettingsSwitch(id: Int, setting: SpoverSettings<Boolean>): Switch {
