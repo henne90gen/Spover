@@ -3,35 +3,51 @@ package de.spover.spover.database
 import androidx.room.*
 
 @Entity
-data class SpeedLimit(
-
+data class Node(
         @PrimaryKey
         var id: Int,
 
         var latitude: Double,
-        var longitude: Double,
+        var longitude: Double
+)
 
-        val allowedSpeed: Int
+@Entity
+data class Way(
+        @PrimaryKey
+        var id: Int,
+
+        var nodes: List<Node>,
+        var maxSpeed: String,
+        var maxSpeedSource: String
+)
+
+@Entity
+data class Request(
+        @PrimaryKey
+        var id: Int,
+
+        var ways: List<Way>,
+        var maxLat: Int,
+        var maxLon: Int,
+        var minLat: Int,
+        var minLon: Int
 )
 
 @Dao
-interface UserDao {
+interface WayDao {
 
-    @Query("SELECT * FROM speedlimit")
-    fun getAll(): List<SpeedLimit>
-
-    @Query("SELECT * FROM speedlimit WHERE id IN (:speedLimitIds)")
-    fun loadAllByIds(speedLimitIds: IntArray): List<SpeedLimit>
+    @Query("SELECT * FROM way")
+    fun getAll(): List<Way>
 
     @Insert
-    fun insertAll(vararg speedlimits: SpeedLimit)
+    fun insertAll(vararg way: Way)
 
     @Delete
-    fun delete(user: SpeedLimit)
+    fun delete(user: Way)
 }
 
-@Database(entities = arrayOf(SpeedLimit::class), version = 1)
+@Database(entities = arrayOf(Way::class), version = 1)
 abstract class AppDatabase : RoomDatabase() {
 
-    abstract fun userDao(): UserDao
+    abstract fun wayDao(): WayDao
 }
