@@ -38,6 +38,6 @@ class SpeedLimitService(context: Context, val callback: SpeedLimitChangedCallbac
         // Todo if valid bounding box exists calculate which way we are on
         // Todo get max speed for that way and return it via the callback
 
-        callback(100)
+        callback(70)
     }
 }
