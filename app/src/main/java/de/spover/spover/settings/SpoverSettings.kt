@@ -1,4 +1,4 @@
-package de.spover.spover
+package de.spover.spover.settings
 
 class SpoverSettings<T> private constructor(val defaultValue: T, val name: String) {
     companion object {

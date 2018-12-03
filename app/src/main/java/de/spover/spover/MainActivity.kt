@@ -14,6 +14,9 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Switch
 import android.widget.Toast
+import de.spover.spover.settings.SettingsStore
+import de.spover.spover.settings.SpoverSettings
+
 import android.text.Editable
 
 
@@ -40,6 +43,9 @@ class MainActivity : AppCompatActivity() {
         settings = SettingsStore(this)
         permissions = PermissionManager(this)
         overlayHelper = OverlayServiceHelper(this)
+
+        scheduleOSMClient(this)
+
         initUI()
     }
 
@@ -145,5 +151,7 @@ class MainActivity : AppCompatActivity() {
         const val OVERLAY_PERMISSION_REQUEST = 0
         const val LOCATION_PERMISSION_REQUEST = 1
         const val NOTIFICATION_PERMISSION_REQUEST = 2
+
+        const val OSM_CLIENT_ID = 0
     }
 }

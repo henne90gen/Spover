@@ -8,7 +8,7 @@ import android.provider.Settings
 import android.support.v4.content.ContextCompat
 import android.text.TextUtils
 
-class PermissionManager(var context: Context) {
+class PermissionManager(private val context: Context) {
     companion object {
         private var TAG = PermissionManager::class.java.simpleName
     }
