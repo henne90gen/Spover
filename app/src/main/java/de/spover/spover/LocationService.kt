@@ -66,7 +66,7 @@ class LocationService(context: Context, val speedCallback: SpeedCallback?, val l
             div += i
         }
         median /= div
-        while (speedList.size > 100) {
+        while (speedList.size > 10) {
             speedList.removeAt(0)
         }
         return median
