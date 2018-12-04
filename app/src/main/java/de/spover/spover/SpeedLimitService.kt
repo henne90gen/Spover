@@ -12,14 +12,9 @@ class SpeedLimitService(context: Context, val callback: SpeedLimitChangedCallbac
         private var TAG = SpeedLimitService::class.java.simpleName
     }
 
-    private val locationService: LocationService
     private var currentLocation: Location? = null
 
-    init {
-        locationService = LocationService(context, null, this::updateCurrentLocation)
-    }
-
-    private fun updateCurrentLocation(location: Location) {
+    fun updateCurrentLocation(location: Location) {
         if (currentLocation == null) {
             currentLocation = location
             return

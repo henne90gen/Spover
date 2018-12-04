@@ -22,10 +22,11 @@ class LocationService(context: Context, val speedCallback: SpeedCallback?, val l
     private var lastLocation: Location? = null
     private var lastTime: Long = 0
 
+    private val locationManager: LocationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
     private val speedList = ArrayList<Double>()
 
     init {
-        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         if (ContextCompat.checkSelfPermission(context,
                         Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0f, this)
@@ -55,6 +56,10 @@ class LocationService(context: Context, val speedCallback: SpeedCallback?, val l
         lastLocation = location
         lastTime = currentTime
         locationCallback?.invoke(location)
+    }
+
+    fun unregisterLocationUpdates() {
+        locationManager.removeUpdates(this)
     }
 
     private fun calculateMovingWeightedAverage(speed: Double): Double {

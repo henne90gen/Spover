@@ -47,8 +47,8 @@ class OverlayService : Service(), View.OnTouchListener {
 
         settingsStore = SettingsStore(this)
 
-        locationService = LocationService(this, this::setSpeed, null)
         speedLimitService = SpeedLimitService(this, this::setSpeedLimit)
+        locationService = LocationService(this, this::setSpeed, speedLimitService::updateCurrentLocation)
 
         lightService = LightService(this, this::adaptToLightMode)
 
@@ -132,10 +132,13 @@ class OverlayService : Service(), View.OnTouchListener {
 
     override fun onDestroy() {
         super.onDestroy()
+        Log.d(TAG, "destroy called")
+
         if (floatingView != null) {
             windowManager!!.removeView(floatingView)
             floatingView = null
         }
+        locationService.unregisterLocationUpdates()
         lightService.destroy()
         stopSelf()
     }
