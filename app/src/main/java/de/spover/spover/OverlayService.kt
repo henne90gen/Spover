@@ -11,6 +11,7 @@ import android.view.*
 import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
+import de.spover.spover.network.OpenStreetMapsClient
 import de.spover.spover.settings.SettingsStore
 import de.spover.spover.settings.SpoverSettings
 import kotlin.math.roundToInt

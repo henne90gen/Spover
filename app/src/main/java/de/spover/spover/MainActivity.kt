@@ -20,6 +20,7 @@ import de.spover.spover.settings.SpoverSettings
 import android.text.Editable
 
 import de.spover.spover.database.AppDatabase
+import de.spover.spover.network.OpenStreetMapsClient
 
 
 class MainActivity : AppCompatActivity() {
@@ -45,13 +46,12 @@ class MainActivity : AppCompatActivity() {
         permissions = PermissionManager(this)
         overlayHelper = OverlayServiceHelper(this)
 
-        scheduleOSMClient(this)
+        OpenStreetMapsClient.schedule(this)
 
 //        val db = Room.databaseBuilder(
 //                this,
 //                AppDatabase::class.java, "database-name"
 //        ).build()
-
 
         initUI()
     }
@@ -92,6 +92,7 @@ class MainActivity : AppCompatActivity() {
         speedThresholdET.addTextChangedListener(object : TextWatcher {
             override fun onTextChanged(c: CharSequence, start: Int, before: Int, count: Int) {
             }
+
             override fun beforeTextChanged(c: CharSequence, start: Int, count: Int, after: Int) {}
             override fun afterTextChanged(c: Editable) {
                 val value = c.toString().toIntOrNull()

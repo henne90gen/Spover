@@ -1,23 +1,40 @@
 package de.spover.spover.network
 
+import android.app.job.JobInfo
 import android.app.job.JobParameters
+import android.app.job.JobScheduler
 import android.app.job.JobService
+import android.content.ComponentName
+import android.content.Context
 import android.util.Log
+import de.spover.spover.MainActivity
 import java.io.*
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
 
 class OpenStreetMapsClient : JobService() {
+
     companion object {
         private const val BASE_URL = "https://overpass-api.de/api/interpreter"
         private val TAG = OpenStreetMapsClient::class.java.simpleName
+
+        fun schedule(context: Context) {
+            val jobScheduler = context
+                    .getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
+
+            val componentName = ComponentName(context,
+                    OpenStreetMapsClient::class.java)
+
+            // DO NOT USE PERIODIC! It is broken from Android N onwards
+            val builder = JobInfo.Builder(MainActivity.OSM_CLIENT_ID, componentName)
+                    .setMinimumLatency((1 * 1000).toLong())
+            jobScheduler.schedule(builder.build())
+        }
     }
 
     override fun onStartJob(params: JobParameters?): Boolean {
         Log.e(TAG, "onStartJob")
-
-//        scheduleOSMClient(applicationContext)
         return true // true means: we are not done yet
     }
 
