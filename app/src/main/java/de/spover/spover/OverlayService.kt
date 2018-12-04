@@ -47,17 +47,19 @@ class OverlayService : Service(), View.OnTouchListener {
 
         settingsStore = SettingsStore(this)
 
-        speedLimitService = SpeedLimitService(this, this::setSpeedLimit)
-        locationService = LocationService(this, this::setSpeed, speedLimitService::updateCurrentLocation)
+        speedLimitService = SpeedLimitService(this, this::setSpeedLimit, this::adaptUIToChangedEnvironment)
+        locationService = LocationService(this, this::updateSpeed, speedLimitService::updateCurrentLocation)
 
-        lightService = LightService(this, this::adaptToLightMode)
+        lightService = LightService(this, this::adaptUIToChangedEnvironment)
 
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         addOverlayView()
     }
 
-    private fun setSpeed(speedInMetersPerSecond: Double) {
+    private fun updateSpeed(speedInMetersPerSecond: Double) {
         val speedInKilometersPerHour: Int = (speedInMetersPerSecond * 3.6).roundToInt()
+        speedLimitService.updateSpeedMode(speedInKilometersPerHour)
+        adaptUIToChangedEnvironment()
         tvSpeed.text = speedInKilometersPerHour.toString()
     }
 
@@ -116,15 +118,32 @@ class OverlayService : Service(), View.OnTouchListener {
         settingsStore.set(SpoverSettings.FIRST_LAUNCH, false)
     }
 
-    private fun adaptToLightMode(mode: LightMode) {
-        if (mode == LightMode.DARK) {
+
+    /**
+     * change the overlay colors depending on:
+     *     1) the current brightness mode
+     *     2) the current speed mode (computed through speed limit, speed and warning threshold
+     */
+    private fun adaptUIToChangedEnvironment() {
+        val lightMode = lightService.lightMode
+        val speedMode = speedLimitService.speedMode
+
+        if (lightMode == LightMode.DARK) {
+            when (speedMode) {
+                SpeedMode.GREEN -> ivSpeed.setImageResource(R.drawable.ic_green_dark_icon)
+                SpeedMode.YELLOW -> ivSpeed.setImageResource(R.drawable.ic_yellow_dark_icon)
+                SpeedMode.RED -> ivSpeed.setImageResource(R.drawable.ic_red_dark_icon)
+            }
             ivSpeedLimit.setImageResource(R.drawable.ic_red_dark_icon)
-            ivSpeed.setImageResource(R.drawable.ic_green_dark_icon)
             tvSpeed.setTextColor(getColor(R.color.colorTextLight))
             tvSpeedLimit.setTextColor(getColor(R.color.colorTextLight))
         } else {
+            when (speedMode) {
+                SpeedMode.GREEN -> ivSpeed.setImageResource(R.drawable.ic_green_icon)
+                SpeedMode.YELLOW -> ivSpeed.setImageResource(R.drawable.ic_yellow_icon)
+                SpeedMode.RED -> ivSpeed.setImageResource(R.drawable.ic_red_icon)
+            }
             ivSpeedLimit.setImageResource(R.drawable.ic_red_icon)
-            ivSpeed.setImageResource(R.drawable.ic_green_icon)
             tvSpeed.setTextColor(getColor(R.color.colorText))
             tvSpeedLimit.setTextColor(getColor(R.color.colorText))
         }

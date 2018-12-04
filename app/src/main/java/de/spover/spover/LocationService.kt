@@ -48,7 +48,7 @@ class LocationService(context: Context, val speedCallback: SpeedCallback?, val l
                 speed = 0.0
             }
             speed = calculateMovingWeightedAverage(speed)
-            if (speed == Double.NaN) {
+            if (speed.isNaN()) {
                 speed = 0.0
             }
             speedCallback?.invoke(speed)

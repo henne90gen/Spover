@@ -91,10 +91,14 @@ class MainActivity : AppCompatActivity() {
         speedThresholdET = findViewById(R.id.etWarningThreshold)
         speedThresholdET.addTextChangedListener(object : TextWatcher {
             override fun onTextChanged(c: CharSequence, start: Int, before: Int, count: Int) {
-                settings.set(SpoverSettings.SPEED_THRESHOLD, c.toString().toInt())
             }
             override fun beforeTextChanged(c: CharSequence, start: Int, count: Int, after: Int) {}
-            override fun afterTextChanged(c: Editable) {}
+            override fun afterTextChanged(c: Editable) {
+                val value = c.toString().toIntOrNull()
+                if (value != null) {
+                    settings.set(SpoverSettings.SPEED_THRESHOLD, value)
+                }
+            }
         })
     }
 

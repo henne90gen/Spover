@@ -18,8 +18,8 @@ class NetworkFragment : Fragment() {
 
     fun startDownload() {
         cancelDownload()
-//        callback?.also { callback ->
-//            downloadTask = DownloadTask(callback).apply {
+//        speedLimitCallback?.also { speedLimitCallback ->
+//            downloadTask = DownloadTask(speedLimitCallback).apply {
 //                execute(url)
 //            }
 //        }

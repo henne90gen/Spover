@@ -6,13 +6,14 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.util.Log
+import kotlin.reflect.KFunction2
 
 enum class LightMode {
     BRIGHT,
     DARK
 }
 
-typealias LightCallback = (LightMode) -> Unit
+typealias LightCallback = () -> Unit
 
 class LightService(context: Context, val callback: LightCallback) : SensorEventListener {
     companion object {
@@ -21,7 +22,7 @@ class LightService(context: Context, val callback: LightCallback) : SensorEventL
     }
 
     private val sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-    private var lightMode = LightMode.BRIGHT
+    var lightMode = LightMode.BRIGHT
 
     init {
         val lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
@@ -32,11 +33,11 @@ class LightService(context: Context, val callback: LightCallback) : SensorEventL
         if (event.values[0] < LIGHT_MODE_THRESHOLD && lightMode != LightMode.DARK) {
             lightMode = LightMode.DARK
             Log.d(TAG, "Set light mode to $lightMode")
-            callback(lightMode)
+            callback()
         } else if (event.values[0] >= LIGHT_MODE_THRESHOLD && lightMode != LightMode.BRIGHT) {
             lightMode = LightMode.BRIGHT
             Log.d(TAG, "Set light mode to $lightMode")
-            callback(lightMode)
+            callback()
         }
     }
 
