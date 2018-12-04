@@ -13,6 +13,7 @@ class SpeedLimitService(context: Context, val callback: SpeedLimitChangedCallbac
     }
 
     private var currentLocation: Location? = null
+    private var currentSpeedLimit: Int = 0 // current speed limit in kph
 
     fun updateCurrentLocation(location: Location) {
         if (currentLocation == null) {
@@ -21,11 +22,12 @@ class SpeedLimitService(context: Context, val callback: SpeedLimitChangedCallbac
         }
         Log.d(TAG, "distance ${location.distanceTo(currentLocation)}")
 
-        if (location.distanceTo(currentLocation) < 20) {
+        if (location.distanceTo(currentLocation) < 10) {
             // ToDo uncomment after debugging
             // return
         }
         currentLocation = location
+        currentSpeedLimit = 70
 
         // Todo if no bounding box exists create one
         // Todo if bounding box is coming close to end create new one in background
@@ -33,6 +35,6 @@ class SpeedLimitService(context: Context, val callback: SpeedLimitChangedCallbac
         // Todo if valid bounding box exists calculate which way we are on
         // Todo get max speed for that way and return it via the callback
 
-        callback(70)
+        callback(currentSpeedLimit)
     }
 }

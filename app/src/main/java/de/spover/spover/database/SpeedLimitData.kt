@@ -6,27 +6,35 @@ import androidx.room.*
 data class Node(
         @PrimaryKey
         var id: Int,
+        var wayId: Int,
 
         var latitude: Double,
         var longitude: Double
 )
 
 @Entity
-data class Way(
+data class EmptyWay(
         @PrimaryKey
         var id: Int,
 
-        var nodes: List<Node>,
         var maxSpeed: String,
         var maxSpeedSource: String
 )
+
+class Way {
+    @Embedded
+    lateinit var emptyWay: EmptyWay
+
+    @Relation(parentColumn = "id", entityColumn = "wayId", entity = Node::class)
+    lateinit var nodes: List<Node>
+}
 
 @Entity
 data class Request(
         @PrimaryKey
         var id: Int,
 
-        var ways: List<Way>,
+        var ways: List<EmptyWay>,
         var maxLat: Int,
         var maxLon: Int,
         var minLat: Int,
@@ -34,20 +42,20 @@ data class Request(
 )
 
 @Dao
-interface WayDao {
+interface EmptyWayDao {
 
-    @Query("SELECT * FROM way")
-    fun getAll(): List<Way>
+    @Query("SELECT * FROM EmptyWay")
+    fun getAll(): List<EmptyWay>
 
-    @Insert
-    fun insertAll(vararg way: Way)
-
-    @Delete
-    fun delete(user: Way)
+//    @Insert
+//    fun insertAll(vararg way: Way)
+//
+//    @Delete
+//    fun delete(user: Way)
 }
 
-@Database(entities = arrayOf(Way::class), version = 1)
+@Database(entities = arrayOf(EmptyWay::class), version = 1)
 abstract class AppDatabase : RoomDatabase() {
 
-    abstract fun wayDao(): WayDao
+    abstract fun wayDao(): EmptyWayDao
 }
