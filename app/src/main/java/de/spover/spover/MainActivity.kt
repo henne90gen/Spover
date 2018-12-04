@@ -18,7 +18,8 @@ import de.spover.spover.settings.SettingsStore
 import de.spover.spover.settings.SpoverSettings
 
 import android.text.Editable
-
+import androidx.room.Room
+import de.spover.spover.database.AppDatabase
 
 
 class MainActivity : AppCompatActivity() {
@@ -45,6 +46,12 @@ class MainActivity : AppCompatActivity() {
         overlayHelper = OverlayServiceHelper(this)
 
         scheduleOSMClient(this)
+
+        val db = Room.databaseBuilder(
+                this,
+                AppDatabase::class.java, "database-name"
+        ).build()
+
 
         initUI()
     }
