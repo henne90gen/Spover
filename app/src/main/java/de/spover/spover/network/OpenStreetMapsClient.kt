@@ -6,9 +6,15 @@ import android.app.job.JobScheduler
 import android.app.job.JobService
 import android.content.ComponentName
 import android.content.Context
+import android.os.PersistableBundle
 import android.util.Log
-import de.spover.spover.MainActivity
-import java.io.*
+import com.fasterxml.jackson.dataformat.xml.XmlMapper
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import de.spover.spover.database.AppDatabase
+import java.io.IOException
+import java.io.InputStream
+import java.io.InputStreamReader
+import java.io.UnsupportedEncodingException
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
@@ -18,29 +24,75 @@ class OpenStreetMapsClient : JobService() {
     companion object {
         private const val BASE_URL = "https://overpass-api.de/api/interpreter"
         private val TAG = OpenStreetMapsClient::class.java.simpleName
+        private const val JOB_ID = 1
 
-        fun schedule(context: Context) {
+        private val xmlMapper = XmlMapper().registerKotlinModule()
+
+        fun scheduleBoundingBoxFetching(context: Context, boundingBox: BoundingBox) {
             val jobScheduler = context
                     .getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
 
             val componentName = ComponentName(context,
                     OpenStreetMapsClient::class.java)
 
-            // DO NOT USE PERIODIC! It is broken from Android N onwards
-            val builder = JobInfo.Builder(MainActivity.OSM_CLIENT_ID, componentName)
-                    .setMinimumLatency((1 * 1000).toLong())
-            jobScheduler.schedule(builder.build())
+            val bundle = convert(boundingBox)
+            val jobInfo = JobInfo.Builder(OpenStreetMapsClient.JOB_ID, componentName)
+                    .setExtras(bundle)
+                    .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                    .build()
+            jobScheduler.schedule(jobInfo)
+        }
+
+        private fun convert(boundingBox: BoundingBox): PersistableBundle {
+            val bundle = PersistableBundle()
+            bundle.putDouble("minLat", boundingBox.minLat)
+            bundle.putDouble("minLon", boundingBox.minLon)
+            bundle.putDouble("maxLat", boundingBox.maxLat)
+            bundle.putDouble("maxLon", boundingBox.maxLon)
+            return bundle
+        }
+
+        fun convert(bundle: PersistableBundle): BoundingBox {
+            return BoundingBox(
+                    minLat = bundle.getDouble("minLat"),
+                    minLon = bundle.getDouble("minLon"),
+                    maxLat = bundle.getDouble("maxLat"),
+                    maxLon = bundle.getDouble("maxLon")
+            )
         }
     }
 
     override fun onStartJob(params: JobParameters?): Boolean {
         Log.e(TAG, "onStartJob")
-        return true // true means: we are not done yet
+        if (params?.extras == null) {
+            Log.e(TAG, "Could not read bounding box information from job parameters")
+            return false
+        }
+        val boundingBox = convert(params.extras)
+        val thread = Thread {
+            run(this, boundingBox)
+        }
+        thread.start()
+        return false
     }
 
     override fun onStopJob(params: JobParameters?): Boolean {
         Log.e(TAG, "onStopJob")
-        return true // true means: reschedule this job please
+        return false
+    }
+
+    private fun createUrl(boundingBox: BoundingBox) : URL {
+        return URL(
+                "https://www.overpass-api.de/api/xapi?*[maxspeed=*][bbox=${boundingBox.minLon},${boundingBox.minLat},${boundingBox.maxLon},${boundingBox.maxLat}]"
+        )
+    }
+
+    private fun run(context: Context, boundingBox: BoundingBox) {
+        val url = createUrl(boundingBox)
+        val downloadResult = download(url)
+        val osm = xmlMapper.readValue<Osm>(downloadResult, Osm::class.java)
+        val db = AppDatabase.createBuilder(context)
+        Log.e(TAG, "Writing ways to database")
     }
 
     /**
@@ -55,9 +107,9 @@ class OpenStreetMapsClient : JobService() {
             connection = (url.openConnection() as? HttpsURLConnection)
             connection?.run {
                 // Timeout for reading InputStream arbitrarily set to 3000ms.
-                readTimeout = 3000
+                readTimeout = 30000
                 // Timeout for connection.connect() arbitrarily set to 3000ms.
-                connectTimeout = 3000
+                connectTimeout = 30000
                 // For this use case, set HTTP method to GET.
                 requestMethod = "GET"
                 // Already true by default but setting just in case; needs to be true since this request
@@ -65,17 +117,14 @@ class OpenStreetMapsClient : JobService() {
                 doInput = true
                 // Open communications link (network traffic occurs here).
                 connect()
-//                publishProgress(NetworkResultStatus.CONNECT_SUCCESS.ordinal)
 
                 if (responseCode != HttpsURLConnection.HTTP_OK) {
                     throw IOException("HTTP error code: $responseCode")
                 }
 
                 // Retrieve the response body as an InputStream.
-//                publishProgress(NetworkResultStatus.GET_INPUT_STREAM_SUCCESS.ordinal, 0)
                 inputStream?.let { stream ->
-                    // Converts Stream to String with max length of 500.
-                    readStream(stream, 500)
+                    readStream(stream)
                 }
             }
         } finally {
@@ -85,24 +134,26 @@ class OpenStreetMapsClient : JobService() {
         }
     }
 
-    /**
-     * Converts the contents of an InputStream to a String.
-     */
     @Throws(IOException::class, UnsupportedEncodingException::class)
-    fun readStream(stream: InputStream, maxReadSize: Int): String? {
-        val reader: Reader? = InputStreamReader(stream, "UTF-8")
-        val rawBuffer = CharArray(maxReadSize)
-        val buffer = StringBuffer()
-        var readSize: Int = reader?.read(rawBuffer) ?: -1
-        var maxReadBytes = maxReadSize
-        while (readSize != -1 && maxReadBytes > 0) {
-            if (readSize > maxReadBytes) {
-                readSize = maxReadBytes
+    fun readStream(stream: InputStream): String? {
+        val bufferSize = 1024
+        val buffer = CharArray(bufferSize)
+        val out = StringBuilder()
+        val streamReader = InputStreamReader(stream, "UTF-8")
+        while (true) {
+            val rsz = streamReader.read(buffer, 0, buffer.size)
+            if (rsz < 0) {
+                break
             }
-            buffer.append(rawBuffer, 0, readSize)
-            maxReadBytes -= readSize
-            readSize = reader?.read(rawBuffer) ?: -1
+            out.append(buffer, 0, rsz)
         }
-        return buffer.toString()
+        return out.toString()
     }
 }
+
+data class BoundingBox(
+        val minLat: Double,
+        val minLon: Double,
+        val maxLat: Double,
+        val maxLon: Double
+)

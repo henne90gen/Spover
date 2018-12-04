@@ -8,19 +8,17 @@ import android.os.Bundle
 import android.provider.Settings
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
+import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Switch
 import android.widget.Toast
+import de.spover.spover.network.BoundingBox
+import de.spover.spover.network.OpenStreetMapsClient
 import de.spover.spover.settings.SettingsStore
 import de.spover.spover.settings.SpoverSettings
-
-import android.text.Editable
-
-import de.spover.spover.database.AppDatabase
-import de.spover.spover.network.OpenStreetMapsClient
 
 
 class MainActivity : AppCompatActivity() {
@@ -46,12 +44,10 @@ class MainActivity : AppCompatActivity() {
         permissions = PermissionManager(this)
         overlayHelper = OverlayServiceHelper(this)
 
-        OpenStreetMapsClient.schedule(this)
-
-//        val db = Room.databaseBuilder(
-//                this,
-//                AppDatabase::class.java, "database-name"
-//        ).build()
+        OpenStreetMapsClient.scheduleBoundingBoxFetching(
+                this,
+                BoundingBox(51.6655, 14.7248, 51.6681, 14.7321)
+        )
 
         initUI()
     }
@@ -164,7 +160,5 @@ class MainActivity : AppCompatActivity() {
         const val OVERLAY_PERMISSION_REQUEST = 0
         const val LOCATION_PERMISSION_REQUEST = 1
         const val NOTIFICATION_PERMISSION_REQUEST = 2
-
-        const val OSM_CLIENT_ID = 0
     }
 }

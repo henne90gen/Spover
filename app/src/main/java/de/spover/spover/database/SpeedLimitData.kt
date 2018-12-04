@@ -1,21 +1,21 @@
 package de.spover.spover.database
 
+import android.content.Context
 import androidx.room.*
 
 @Entity
 data class Node(
         @PrimaryKey
         var id: Int,
-        var wayId: Int,
 
         var latitude: Double,
         var longitude: Double
 )
 
-@Entity
+@Entity(tableName = "way")
 data class EmptyWay(
         @PrimaryKey
-        var id: Int,
+        var wayId: Int,
 
         var maxSpeed: String,
         var maxSpeedSource: String
@@ -25,37 +25,51 @@ class Way {
     @Embedded
     lateinit var emptyWay: EmptyWay
 
-    @Relation(parentColumn = "id", entityColumn = "wayId", entity = Node::class)
+    @Relation(parentColumn = "wayId", entityColumn = "id", entity = Node::class)
     lateinit var nodes: List<Node>
 }
 
 @Entity
-data class Request(
+data class EmptyRequest(
         @PrimaryKey
-        var id: Int,
+        var requestId: Int,
 
-        var ways: List<EmptyWay>,
         var maxLat: Int,
         var maxLon: Int,
         var minLat: Int,
         var minLon: Int
 )
 
-@Dao
-interface EmptyWayDao {
+class Request {
+    @Embedded
+    lateinit var emptyRequest: EmptyRequest
 
-    @Query("SELECT * FROM EmptyWay")
-    fun getAll(): List<EmptyWay>
-
-//    @Insert
-//    fun insertAll(vararg way: Way)
-//
-//    @Delete
-//    fun delete(user: Way)
+    @Relation(parentColumn = "requestId", entityColumn = "wayId", entity = EmptyWay::class)
+    lateinit var ways: List<EmptyWay>
 }
 
-@Database(entities = arrayOf(EmptyWay::class), version = 1)
-abstract class AppDatabase : RoomDatabase() {
+@Dao
+interface WayDao {
 
-    abstract fun wayDao(): EmptyWayDao
+    @Query("SELECT * FROM way")
+    fun getWays(): List<Way>
+
+    @Insert
+    fun insertAll(vararg way: EmptyWay)
+
+    @Delete
+    fun delete(way: EmptyWay)
+}
+
+@Database(entities = arrayOf(EmptyWay::class, Node::class), version = 1)
+abstract class AppDatabase : RoomDatabase() {
+    companion object {
+        private const val NAME = "spover"
+
+        fun createBuilder(context: Context): RoomDatabase.Builder<AppDatabase> {
+            return Room.databaseBuilder(context, AppDatabase::class.java, NAME)
+        }
+    }
+
+    abstract fun wayDao(): WayDao
 }
