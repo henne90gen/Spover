@@ -54,3 +54,8 @@ Work plan until 31.10.2018:
 - mobile computing challenges (again...)
 - lessons learned
 - ~~open issues~~ ;)
+
+
+CREDITS
+Sounds from:
+https://freesound.org/people/tim.kahn/

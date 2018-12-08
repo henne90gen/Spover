@@ -29,7 +29,7 @@
         <service
             android:name=".network.OpenStreetMapsClient"
             android:permission="android.permission.BIND_JOB_SERVICE" />
-        <service android:name=".OverlayService" />
+        <service android:name=".overlay.OverlayService" />
         <service
             android:name=".NotificationListener"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">

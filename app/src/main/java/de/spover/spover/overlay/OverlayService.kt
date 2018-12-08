@@ -1,4 +1,4 @@
-package de.spover.spover
+package de.spover.spover.overlay
 
 import android.app.Service
 import android.content.Context
@@ -11,7 +11,7 @@ import android.view.*
 import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
-import de.spover.spover.network.OpenStreetMapsClient
+import de.spover.spover.*
 import de.spover.spover.settings.SettingsStore
 import de.spover.spover.settings.SpoverSettings
 import kotlin.math.roundToInt
@@ -37,11 +37,14 @@ class OverlayService : Service(), View.OnTouchListener {
     private lateinit var ivSpeedLimit: ImageView
     private lateinit var tvSpeed: TextView
 
+    private var soundManager: SoundManager = SoundManager.getInstance()
+
     private lateinit var tvSpeedLimit: TextView
 
     override fun onBind(intent: Intent): IBinder? {
         return null
     }
+
 
     override fun onCreate() {
         super.onCreate()
@@ -54,6 +57,9 @@ class OverlayService : Service(), View.OnTouchListener {
         lightService = LightService(this, this::adaptUIToChangedEnvironment)
 
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+
+        soundManager.loadSound(this)
+
         addOverlayView()
     }
 
@@ -133,7 +139,10 @@ class OverlayService : Service(), View.OnTouchListener {
             when (speedMode) {
                 SpeedMode.GREEN -> ivSpeed.setImageResource(R.drawable.ic_green_dark_icon)
                 SpeedMode.YELLOW -> ivSpeed.setImageResource(R.drawable.ic_yellow_dark_icon)
-                SpeedMode.RED -> ivSpeed.setImageResource(R.drawable.ic_red_dark_icon)
+                SpeedMode.RED -> {
+                    ivSpeed.setImageResource(R.drawable.ic_red_dark_icon)
+                    soundManager.play()
+                }
             }
             ivSpeedLimit.setImageResource(R.drawable.ic_red_dark_icon)
             tvSpeed.setTextColor(getColor(R.color.colorTextLight))
@@ -142,7 +151,10 @@ class OverlayService : Service(), View.OnTouchListener {
             when (speedMode) {
                 SpeedMode.GREEN -> ivSpeed.setImageResource(R.drawable.ic_green_icon)
                 SpeedMode.YELLOW -> ivSpeed.setImageResource(R.drawable.ic_yellow_icon)
-                SpeedMode.RED -> ivSpeed.setImageResource(R.drawable.ic_red_icon)
+                SpeedMode.RED -> {
+                    ivSpeed.setImageResource(R.drawable.ic_red_icon)
+                    soundManager.play()
+                }
             }
             ivSpeedLimit.setImageResource(R.drawable.ic_red_icon)
             tvSpeed.setTextColor(getColor(R.color.colorText))
@@ -164,7 +176,7 @@ class OverlayService : Service(), View.OnTouchListener {
     }
 
     private fun storeReopenFlag(value: Boolean) {
-        settingsStore.set(SpoverSettings.REOPEN_FLAG, false)
+        settingsStore.set(SpoverSettings.REOPEN_FLAG, value)
     }
 
 

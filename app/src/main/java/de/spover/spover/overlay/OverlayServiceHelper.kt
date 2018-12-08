@@ -1,4 +1,4 @@
-package de.spover.spover
+package de.spover.spover.overlay
 
 import android.app.ActivityManager
 import android.content.Context

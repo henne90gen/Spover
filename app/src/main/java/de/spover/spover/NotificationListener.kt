@@ -2,6 +2,7 @@ package de.spover.spover
 
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import de.spover.spover.overlay.OverlayServiceHelper
 import de.spover.spover.settings.SettingsStore
 import de.spover.spover.settings.SpoverSettings
 

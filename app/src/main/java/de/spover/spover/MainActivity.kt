@@ -17,6 +17,7 @@ import android.widget.Switch
 import android.widget.Toast
 import de.spover.spover.network.BoundingBox
 import de.spover.spover.network.OpenStreetMapsClient
+import de.spover.spover.overlay.OverlayServiceHelper
 import de.spover.spover.settings.SettingsStore
 import de.spover.spover.settings.SpoverSettings
 
