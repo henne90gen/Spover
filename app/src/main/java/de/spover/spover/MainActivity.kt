@@ -86,6 +86,7 @@ class MainActivity : AppCompatActivity() {
         soundAlertSwitch = setupSettingsSwitch(R.id.switchSoundAlert, SpoverSettings.SOUND_ALERT)
 
         speedThresholdET = findViewById(R.id.etWarningThreshold)
+        speedThresholdET.setText("${settings.get(SpoverSettings.SPEED_THRESHOLD)}")
         speedThresholdET.addTextChangedListener(object : TextWatcher {
             override fun onTextChanged(c: CharSequence, start: Int, before: Int, count: Int) {
             }

@@ -54,13 +54,17 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
         val threshold = settingsStore.get(SpoverSettings.SPEED_THRESHOLD)
 
         speedMode = when {
-            currentSpeed <= currentSpeedLimit -> SpeedMode.GREEN
-            currentSpeed <= currentSpeedLimit + (threshold/2) -> SpeedMode.YELLOW
+            currentSpeed <= currentSpeedLimit + (threshold/2) -> SpeedMode.GREEN
+            currentSpeed < currentSpeedLimit + threshold -> SpeedMode.YELLOW
             currentSpeed > currentSpeedLimit + threshold -> SpeedMode.RED
             else -> {
                 Log.e(TAG, "Unknown speed mode for speed: $currentSpeed and speed limit: $currentSpeedLimit")
                 SpeedMode.GREEN
             }
         }
+
+        Log.d(TAG, "mode $speedMode, curr $currentSpeed limit $currentSpeedLimit")
+
+        speedModeCallback()
     }
 }

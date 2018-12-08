@@ -141,7 +141,7 @@ class OverlayService : Service(), View.OnTouchListener {
                 SpeedMode.YELLOW -> ivSpeed.setImageResource(R.drawable.ic_yellow_dark_icon)
                 SpeedMode.RED -> {
                     ivSpeed.setImageResource(R.drawable.ic_red_dark_icon)
-                    soundManager.play()
+                    if (settingsStore.get(SpoverSettings.SOUND_ALERT)) soundManager.play()
                 }
             }
             ivSpeedLimit.setImageResource(R.drawable.ic_red_dark_icon)
@@ -153,7 +153,7 @@ class OverlayService : Service(), View.OnTouchListener {
                 SpeedMode.YELLOW -> ivSpeed.setImageResource(R.drawable.ic_yellow_icon)
                 SpeedMode.RED -> {
                     ivSpeed.setImageResource(R.drawable.ic_red_icon)
-                    soundManager.play()
+                    if (settingsStore.get(SpoverSettings.SOUND_ALERT)) soundManager.play()
                 }
             }
             ivSpeedLimit.setImageResource(R.drawable.ic_red_icon)
