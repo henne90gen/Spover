@@ -2,66 +2,111 @@ package de.spover.spover.database
 
 import android.content.Context
 import androidx.room.*
+import androidx.room.ForeignKey.CASCADE
+import java.time.Instant
+import java.time.LocalDateTime
+import java.util.*
 
-@Entity
+@Entity(tableName = "node", foreignKeys = [
+    ForeignKey(entity = Way::class, parentColumns = arrayOf("id"), childColumns = arrayOf("wayId"), onDelete = CASCADE)
+])
 data class Node(
-        @PrimaryKey
-        var id: Int,
-
+        var wayId: Long,
         var latitude: Double,
-        var longitude: Double
+        var longitude: Double,
+        var osmIdentifier: String,
+
+        @PrimaryKey(autoGenerate = true)
+        var id: Long? = null
 )
 
-@Entity(tableName = "way")
-data class EmptyWay(
-        @PrimaryKey
-        var wayId: Int,
-
+@Entity(tableName = "way", foreignKeys = [
+    ForeignKey(entity = Request::class, parentColumns = arrayOf("id"), childColumns = arrayOf("requestId"), onDelete = CASCADE)
+])
+data class Way(
+        var requestId: Long,
         var maxSpeed: String,
-        var maxSpeedSource: String
+        var maxSpeedSource: String,
+
+        @PrimaryKey(autoGenerate = true)
+        var id: Long? = null
 )
 
-class Way {
-    @Embedded
-    lateinit var emptyWay: EmptyWay
+@Entity(tableName = "request")
+data class Request(
+        var maxLat: Double,
+        var maxLon: Double,
+        var minLat: Double,
+        var minLon: Double,
 
-    @Relation(parentColumn = "wayId", entityColumn = "id", entity = Node::class)
-    lateinit var nodes: List<Node>
-}
+        var creationTime: LocalDateTime,
 
-@Entity
-data class EmptyRequest(
-        @PrimaryKey
-        var requestId: Int,
-
-        var maxLat: Int,
-        var maxLon: Int,
-        var minLat: Int,
-        var minLon: Int
+        @PrimaryKey(autoGenerate = true)
+        var id: Long? = null
 )
 
-class Request {
-    @Embedded
-    lateinit var emptyRequest: EmptyRequest
+@Dao
+interface NodeDao {
 
-    @Relation(parentColumn = "requestId", entityColumn = "wayId", entity = EmptyWay::class)
-    lateinit var ways: List<EmptyWay>
+    @Insert
+    fun insert(node: Node): Long
+
+    @Insert
+    fun insertAll(nodes: List<Node>)
+
+    @Update
+    fun update(node: Node)
+
+    @Query("SELECT * from node WHERE wayId=:wayId")
+    fun findNodesByWayId(wayId: Long): List<Node>
 }
 
 @Dao
 interface WayDao {
 
-    @Query("SELECT * FROM way")
-    fun getWays(): List<Way>
-
     @Insert
-    fun insertAll(vararg way: EmptyWay)
+    fun insert(way: Way): Long
 
     @Delete
-    fun delete(way: EmptyWay)
+    fun delete(way: Way)
+
+    @Query("SELECT * FROM way")
+    fun findAllWays(): List<Way>
+
+    @Query("SELECT * FROM way WHERE requestId=:requestId")
+    fun findWaysByRequestId(requestId: Long): List<Way>
 }
 
-@Database(entities = arrayOf(EmptyWay::class, Node::class), version = 1)
+@Dao
+interface RequestDao {
+
+    @Insert
+    fun insert(request: Request): Long
+
+    @Delete
+    fun delete(request: Request)
+
+    @Query("SELECT * FROM request")
+    fun findAllRequests(): List<Request>
+}
+
+class Converters {
+    @TypeConverter
+    fun fromTimestamp(value: Long?): LocalDateTime? {
+        return value?.let {
+            LocalDateTime.ofInstant(Instant.ofEpochMilli(it),
+                    TimeZone.getDefault().toZoneId())
+        }
+    }
+
+    @TypeConverter
+    fun dateToTimestamp(date: LocalDateTime?): Long? {
+        return date?.atZone(TimeZone.getDefault().toZoneId())?.toInstant()?.toEpochMilli()
+    }
+}
+
+@Database(entities = [Request::class, Way::class, Node::class], version = 1)
+@TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     companion object {
         private const val NAME = "spover"
@@ -72,4 +117,8 @@ abstract class AppDatabase : RoomDatabase() {
     }
 
     abstract fun wayDao(): WayDao
+
+    abstract fun requestDao(): RequestDao
+
+    abstract fun nodeDao(): NodeDao
 }

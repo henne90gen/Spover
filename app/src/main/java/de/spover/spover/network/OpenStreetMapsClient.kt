@@ -10,7 +10,7 @@ import android.os.PersistableBundle
 import android.util.Log
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import de.spover.spover.database.AppDatabase
+import de.spover.spover.database.*
 import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -18,11 +18,10 @@ import java.io.UnsupportedEncodingException
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
-
 class OpenStreetMapsClient : JobService() {
 
     companion object {
-        private const val BASE_URL = "https://overpass-api.de/api/interpreter"
+        private const val BASE_URL = "https://overpass-api.de/api/"
         private val TAG = OpenStreetMapsClient::class.java.simpleName
         private const val JOB_ID = 1
 
@@ -81,18 +80,17 @@ class OpenStreetMapsClient : JobService() {
         return false
     }
 
-    private fun createUrl(boundingBox: BoundingBox) : URL {
-        return URL(
-                "https://www.overpass-api.de/api/xapi?*[maxspeed=*][bbox=${boundingBox.minLon},${boundingBox.minLat},${boundingBox.maxLon},${boundingBox.maxLat}]"
-        )
+    private fun createUrl(boundingBox: BoundingBox): URL {
+        return URL("${BASE_URL}xapi?*[maxspeed=*][bbox=${boundingBox.minLon},${boundingBox.minLat},${boundingBox.maxLon},${boundingBox.maxLat}]")
     }
 
     private fun run(context: Context, boundingBox: BoundingBox) {
         val url = createUrl(boundingBox)
         val downloadResult = download(url)
         val osm = xmlMapper.readValue<Osm>(downloadResult, Osm::class.java)
-        val db = AppDatabase.createBuilder(context)
-        Log.e(TAG, "Writing ways to database")
+        val db = AppDatabase.createBuilder(context).build()
+
+        OsmPersistenceHelper().persistOsmXmlResult(db, osm, boundingBox)
     }
 
     /**

@@ -6,8 +6,8 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
-import android.support.v4.app.ActivityCompat
-import android.support.v7.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.appcompat.app.AppCompatActivity
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
@@ -23,6 +23,13 @@ import de.spover.spover.settings.SpoverSettings
 
 
 class MainActivity : AppCompatActivity() {
+
+    companion object {
+        private var TAG = MainActivity::class.java.simpleName
+        const val OVERLAY_PERMISSION_REQUEST = 0
+        const val LOCATION_PERMISSION_REQUEST = 1
+        const val NOTIFICATION_PERMISSION_REQUEST = 2
+    }
 
     private lateinit var settings: SettingsStore
     private lateinit var permissions: PermissionManager
@@ -154,13 +161,5 @@ class MainActivity : AppCompatActivity() {
             locationPermissionSwitch.isChecked =
                     (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)
         }
-    }
-
-
-    companion object {
-        private var TAG = MainActivity::class.java.simpleName
-        const val OVERLAY_PERMISSION_REQUEST = 0
-        const val LOCATION_PERMISSION_REQUEST = 1
-        const val NOTIFICATION_PERMISSION_REQUEST = 2
     }
 }
