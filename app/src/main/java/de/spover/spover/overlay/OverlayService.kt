@@ -12,6 +12,8 @@ import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
 import de.spover.spover.*
+import de.spover.spover.network.BoundingBox
+import de.spover.spover.network.OpenStreetMapsClient
 import de.spover.spover.settings.SettingsStore
 import de.spover.spover.settings.SpoverSettings
 import kotlin.math.roundToInt
@@ -59,6 +61,14 @@ class OverlayService : Service(), View.OnTouchListener {
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
         soundManager.loadSound(this)
+
+        val boundingBox = BoundingBox(51.6655, 14.7248, 51.6681, 14.7321)
+        OpenStreetMapsClient.scheduleBoundingBoxFetching(
+                this,
+                boundingBox
+        )
+
+        speedLimitService.loadSpeedData(boundingBox)
 
         addOverlayView()
     }

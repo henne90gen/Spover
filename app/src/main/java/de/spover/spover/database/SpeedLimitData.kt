@@ -88,6 +88,9 @@ interface RequestDao {
 
     @Query("SELECT * FROM request")
     fun findAllRequests(): List<Request>
+
+    @Query("SELECT * FROM request WHERE maxLat=:maxLat AND maxLon=:maxLon AND minLat=:minLat AND minLon=:minLon")
+    fun findRequestByBoundingBox(minLon: Double, minLat: Double, maxLon: Double, maxLat: Double): Request
 }
 
 class Converters {

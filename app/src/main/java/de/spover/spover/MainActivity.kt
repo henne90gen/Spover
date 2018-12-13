@@ -52,11 +52,6 @@ class MainActivity : AppCompatActivity() {
         permissions = PermissionManager(this)
         overlayHelper = OverlayServiceHelper(this)
 
-        OpenStreetMapsClient.scheduleBoundingBoxFetching(
-                this,
-                BoundingBox(51.6655, 14.7248, 51.6681, 14.7321)
-        )
-
         initUI()
     }
 
