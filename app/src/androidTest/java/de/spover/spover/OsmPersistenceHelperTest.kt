@@ -67,7 +67,7 @@ open class OsmPersistenceHelperTest {
         val nodes = db.nodeDao().findNodesByWayId(way.id!!)
         assertEquals(11, nodes.size)
 
-        val osmIdentifiers = listOf<String>("442734", "442735", "308149691", "442736", "4665821726", "442737", "4665821727", "442738", "442739", "2429178447", "442740")
+        val osmIdentifiers = listOf("442734", "442735", "308149691", "442736", "4665821726", "442737", "4665821727", "442738", "442739", "2429178447", "442740")
         nodes.forEach {
             assertTrue(osmIdentifiers.contains(it.osmIdentifier))
         }

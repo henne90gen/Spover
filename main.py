@@ -15,10 +15,15 @@ def fetch_bb(start_point, end_point):
     bounding_box = BB(min=start_point, max=end_point)
     url = f"{BASE_URL}xapi?*[maxspeed=*][bbox={bounding_box.min.longitude:.5f},{bounding_box.min.latitude:.5f},{bounding_box.max.longitude:.5f},{bounding_box.max.latitude:.5f}]"
     print(url)
-    response = request.urlopen(url)
-    data = response.read()
-    return len(data) / 1024.0
-
+    try:
+        response = request.urlopen(url)
+        data = response.read()
+        if len(data) < 1024:
+            print(data.decode('utf-8'))
+        return len(data) / 1024.0
+    except Exception as err:
+        print(err)
+        return -1
 
 # https://overpass-api.de/api/xapi?*[maxspeed=*][bbox=14.00000,51.00000,14.01007,51.00636]
 # https://overpass-api.de/api/xapi?*[maxspeed=*][bbox=14.00000,51.00000,14.02015,51.01271]
@@ -40,6 +45,7 @@ def fetch_bb(start_point, end_point):
 # https://overpass-api.de/api/xapi?*[maxspeed=*][bbox=14.00000,51.00000,14.18176,51.11427]
 # https://overpass-api.de/api/xapi?*[maxspeed=*][bbox=14.00000,51.00000,14.19189,51.12061]
 # https://overpass-api.de/api/xapi?*[maxspeed=*][bbox=14.00000,51.00000,14.20201,51.12695]
+
 #            data_size
 # distance
 # 1.0        10.282227
@@ -63,12 +69,14 @@ def fetch_bb(start_point, end_point):
 # 19.0      320.554688
 # 20.0      408.732422
 
+
 def main():
     df = pd.DataFrame(columns=['distance', 'data_size'])
 
-    for distance in range(1, 21):
+    for distance in range(1, 501, 50):
         start_point = Point(51, 14)
-        end_point = geodesic().destination(start_point, bearing=45, distance=distance)
+        middle_point = geodesic().destination(start_point, bearing=0, distance=distance)
+        end_point = geodesic().destination(middle_point, bearing=90, distance=distance)
         data_size = fetch_bb(start_point, end_point)
 
         df = df.append(
@@ -78,6 +86,7 @@ def main():
 
     df = df.set_index('distance')
     print(df)
+
     ax = df.plot()
     ax.set_xlabel('BB-Size in km')
     ax.set_ylabel('Download-Size in Kilobyte')
