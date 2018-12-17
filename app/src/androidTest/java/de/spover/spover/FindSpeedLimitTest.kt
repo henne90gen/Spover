@@ -27,8 +27,8 @@ open class FindSpeedLimitTest {
                 Node(1, 13.75487, 51.02706, "2"))
 
         wayMap[Way(1, "24", "sign", 1)] = listOf(
-                Node(1, 13.75487, 51.02706, "2"))
-                Node(1, 13.75557, 51.02651, "1")
+                Node(1, 13.75487, 51.02706, "2"),
+                Node(1, 13.75557, 51.02651, "1"))
     }
 
     // test fails, for debugging seeing the log would be useful but isn't possible by default
