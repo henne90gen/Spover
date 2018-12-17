@@ -15,7 +15,7 @@ class SettingsStore(context: Context) {
 
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> get(setting: SpoverSettings<T>): T {
-        Log.d(TAG, "Retrieved content of ${setting.name}")
+        //Log.d(TAG, "Retrieved content of ${setting.name}")
         when {
             setting.defaultValue::class == Boolean::class -> {
                 return preferences.getBoolean(setting.name, setting.defaultValue as Boolean) as T
@@ -29,7 +29,7 @@ class SettingsStore(context: Context) {
 
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> set(setting: SpoverSettings<T>, value: T) {
-        Log.d(TAG, "Updated content of ${setting.name} to $value")
+        //Log.d(TAG, "Updated content of ${setting.name} to $value")
         with(preferences.edit()) {
             when {
                 setting.defaultValue::class == Boolean::class -> {

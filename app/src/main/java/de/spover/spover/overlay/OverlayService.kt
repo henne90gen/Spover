@@ -54,21 +54,13 @@ class OverlayService : Service(), View.OnTouchListener {
         settingsStore = SettingsStore(this)
 
         speedLimitService = SpeedLimitService(this, this::setSpeedLimit, this::adaptUIToChangedEnvironment)
-        locationService = LocationService(this, this::updateSpeed, speedLimitService::updateCurrentLocation)
+        locationService = LocationService(this, this::updateSpeed, speedLimitService::updateCurrentLocation, speedLimitService::updateBoundingBox)
 
         lightService = LightService(this, this::adaptUIToChangedEnvironment)
 
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
         soundManager.loadSound(this)
-
-        val boundingBox = BoundingBox(51.6655, 14.7248, 51.6681, 14.7321)
-        OpenStreetMapsClient.scheduleBoundingBoxFetching(
-                this,
-                boundingBox
-        )
-
-        speedLimitService.loadSpeedData(boundingBox)
 
         addOverlayView()
     }

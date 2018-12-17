@@ -35,7 +35,10 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
          * (based on last two location and way data for the current bounding box)
          */
         fun findSpeedLimit(location: Location, lastLocation: Location, wayMap: LinkedHashMap<Way, List<Node>>): Int {
-
+            if (wayMap.size == 0) {
+                Log.e(TAG, "Waymap is empty, can't get a speed limit")
+                return -1
+            }
             //
             // Todo needs to be tested for working correctly
             // how accurate is it for:
@@ -105,17 +108,36 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
     // linked since we want to preserve the node order
     private var wayMap: LinkedHashMap<Way, List<Node>> = linkedMapOf()
 
-    fun loadSpeedData(boundingBox: BoundingBox) {
-        val response = ReadFromDBAsyncTask(this, boundingBox).execute()
-        Log.d(TAG, "should have loaded")
+    private var boundingBox: BoundingBox = BoundingBox(0.0, 0.0, 0.0, 0.0)
+    private var isDataUpToDate: Boolean = true
+
+    fun updateBoundingBox(newBoundingBox: BoundingBox) {
+        boundingBox = newBoundingBox
+        isDataUpToDate = false
     }
 
-    fun onSpeedDataLoaded(request: Request?, wayMap: LinkedHashMap<Way, List<Node>>) {
+    fun loadSpeedData(boundingBox: BoundingBox) {
+        ReadFromDBAsyncTask(this, boundingBox).execute()
+    }
+
+    fun onSpeedDataLoaded(request: Request, wayMap: LinkedHashMap<Way, List<Node>>) {
         Log.d(TAG, "Loaded speed data for $request from DB")
         this.wayMap = wayMap
+
+        // check if request bounding box and the current bounding box are equal
+        val bbEqual = boundingBox == BoundingBox(request.minLat, request.minLon, request.maxLat, request.maxLon)
+        if (false) {
+            isDataUpToDate = true
+        }
     }
 
     fun updateCurrentLocation(location: Location) {
+        // when our current data doesn't correspond to the current bounding box
+        // try reading data for the new bounding box from db with each location update
+        if (!isDataUpToDate) {
+            loadSpeedData(boundingBox)
+        }
+
         if (currentLocation == null) {
             currentLocation = location
             return
@@ -151,9 +173,6 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
                 SpeedMode.GREEN
             }
         }
-
-        Log.d(TAG, "mode $speedMode, curr $currentSpeed limit $currentSpeedLimit")
-
         speedModeCallback()
     }
 
@@ -183,7 +202,9 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
 
         override fun onPostExecute(result: String?) {
             super.onPostExecute(result)
-            speedLimitService.onSpeedDataLoaded(request, wayMap)
+            if (request != null) {
+                speedLimitService.onSpeedDataLoaded(request!!, wayMap)
+            }
         }
     }
 }

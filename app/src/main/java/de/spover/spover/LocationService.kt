@@ -9,11 +9,15 @@ import android.location.LocationManager
 import android.os.Bundle
 import androidx.core.content.ContextCompat
 import android.util.Log
+import de.spover.spover.network.BoundingBox
+import de.spover.spover.network.OpenStreetMapsClient
+import kotlin.math.cos
 
 typealias SpeedCallback = (Double) -> Unit
 typealias LocationCallback = (Location) -> Unit
+typealias BoundingBoxCallback = (BoundingBox) -> Unit
 
-class LocationService(context: Context, val speedCallback: SpeedCallback?, val locationCallback: LocationCallback?) : LocationListener {
+class LocationService(var context: Context, val speedCallback: SpeedCallback?, val locationCallback: LocationCallback?, val bBoxCallback: BoundingBoxCallback?) : LocationListener {
     companion object {
         private val TAG = LocationService::class.java.simpleName
         private const val SPEED_THRESHOLD = 1 / 3.6
@@ -26,6 +30,10 @@ class LocationService(context: Context, val speedCallback: SpeedCallback?, val l
 
     private val speedList = ArrayList<Double>()
 
+    var boundingBox: BoundingBox? = null
+    private var minValidDistanceFromBoundingBoxEdge = 200
+    private var newBoundingBoxDistFromLocation = 500
+
     init {
         if (ContextCompat.checkSelfPermission(context,
                         Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -36,7 +44,7 @@ class LocationService(context: Context, val speedCallback: SpeedCallback?, val l
     }
 
     override fun onLocationChanged(location: Location) {
-        //Log.d(TAG, "Received location update: $location")
+        Log.d(TAG, "Received location update: $location")
         val currentTime = System.currentTimeMillis()
         lastLocation?.let {
             val distance = location.distanceTo(it)
@@ -53,9 +61,69 @@ class LocationService(context: Context, val speedCallback: SpeedCallback?, val l
             }
             speedCallback?.invoke(speed)
         }
+
+        Log.d(TAG,"Bounding box valid ${isBoundingBoxValid(location)}")
+        if (!isBoundingBoxValid(location)) {
+            val newBoundingBox = calcBoundingBox(location, newBoundingBoxDistFromLocation )
+            fetchNewData(newBoundingBox)
+            boundingBox = newBoundingBox
+            bBoxCallback?.invoke(newBoundingBox)
+        }
+
         lastLocation = location
         lastTime = currentTime
         locationCallback?.invoke(location)
+    }
+
+    private fun isBoundingBoxValid(location: Location): Boolean {
+        if (boundingBox == null) {
+            return false
+        }
+        val tmpLocation = Location("")
+
+        // top edge
+        tmpLocation.latitude = boundingBox!!.maxLat
+        tmpLocation.longitude = location.longitude
+        if (location.distanceTo(tmpLocation) < minValidDistanceFromBoundingBoxEdge) return false
+        // right edge
+        tmpLocation.latitude = location.latitude
+        tmpLocation.longitude = boundingBox!!.maxLon
+        if (location.distanceTo(tmpLocation) < minValidDistanceFromBoundingBoxEdge) return false
+        // bottom edge
+        tmpLocation.latitude = boundingBox!!.minLat
+        tmpLocation.longitude = location.longitude
+        if (location.distanceTo(tmpLocation) < minValidDistanceFromBoundingBoxEdge) return false
+        // left edge
+        tmpLocation.latitude = location.latitude
+        tmpLocation.longitude = boundingBox!!.minLon
+        if (location.distanceTo(tmpLocation) < minValidDistanceFromBoundingBoxEdge) return false
+
+        return true
+    }
+
+    /**
+     * returns a bounding box with each edge being 'distance' meters away from the given location
+     */
+    private fun calcBoundingBox(location: Location, distance: Int): BoundingBox {
+        val minLoc = translateLocationByMeters(location, -distance, -distance)
+        val maxLoc = translateLocationByMeters(location, distance, distance)
+        return BoundingBox(minLoc.latitude, minLoc.longitude, maxLoc.latitude, maxLoc.longitude)
+    }
+
+    // https://gis.stackexchange.com/questions/2951/algorithm-for-offsetting-a-latitude-longitude-by-some-amount-of-meters
+    private fun translateLocationByMeters(location: Location, transX: Int, transY: Int): Location {
+        val tmpLocation = Location("")
+        tmpLocation.latitude = location.latitude + (transY / 111111.0f)
+        tmpLocation.longitude = location.longitude + (transX / (111111.0f * cos(location.latitude)))
+        return tmpLocation
+    }
+
+    private fun fetchNewData(boundingBox: BoundingBox) {
+        Log.d(TAG, "started new request for $boundingBox")
+        OpenStreetMapsClient.scheduleBoundingBoxFetching(
+                context,
+                boundingBox
+        )
     }
 
     fun unregisterLocationUpdates() {
