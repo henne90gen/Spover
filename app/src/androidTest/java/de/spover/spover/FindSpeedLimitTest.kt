@@ -37,8 +37,10 @@ open class FindSpeedLimitTest {
     fun findsCorrectSpeedLimit() {
         lastLocation.latitude = 13.75557
         lastLocation.longitude = 51.02651
+
         location.latitude = 13.75487
         location.longitude = 51.02706
+
         assertEquals(42, SpeedLimitService.findSpeedLimit(location, lastLocation, wayMap))
         assertEquals(24, SpeedLimitService.findSpeedLimit(lastLocation, location, wayMap))
     }
