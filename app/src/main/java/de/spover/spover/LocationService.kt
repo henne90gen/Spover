@@ -126,14 +126,14 @@ class LocationService(var context: Context, val speedCallback: SpeedCallback?, v
     }
 
     override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {
-        Log.d(TAG, "Status changed: $provider, $status, $extras")
+        //Log.d(TAG, "Status changed: $provider, $status, $extras")
     }
 
     override fun onProviderEnabled(provider: String) {
-        Log.d(TAG, "Provider enabled: $provider")
+        //Log.d(TAG, "Provider enabled: $provider")
     }
 
     override fun onProviderDisabled(provider: String) {
-        Log.d(TAG, "Provider disabled: $provider")
+        //Log.d(TAG, "Provider disabled: $provider")
     }
 }

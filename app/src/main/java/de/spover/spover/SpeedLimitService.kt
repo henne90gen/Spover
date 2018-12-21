@@ -213,6 +213,8 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
             if (request != null) {
                 speedLimitService.onSpeedDataLoaded(request!!, wayMap)
             }
+
+            db.close()
         }
     }
 }
