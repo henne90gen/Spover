@@ -79,8 +79,7 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
                     -1
                 }
                 else -> {
-                    Log.d(TAG, "nearest way is around ${minDistance/2}m away")
-                    Log.d(TAG, "Current speed limit is ${closestWay.maxSpeed}km/h")
+                    Log.d(TAG, "nearest way is around ${minDistance/2}m away and has a speed limit of ${getWayMaxSpeed(closestWay)}km/h")
                     getWayMaxSpeed(closestWay)
                 }
             }

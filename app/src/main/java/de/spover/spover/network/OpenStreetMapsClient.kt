@@ -18,6 +18,7 @@ import java.io.InputStreamReader
 import java.io.UnsupportedEncodingException
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
+import kotlin.math.cos
 
 class OpenStreetMapsClient : JobService() {
 
@@ -63,7 +64,6 @@ class OpenStreetMapsClient : JobService() {
     }
 
     override fun onStartJob(params: JobParameters?): Boolean {
-        Log.e(TAG, "onStartJob")
         if (params?.extras == null) {
             Log.e(TAG, "Could not read bounding box information from job parameters")
             return false
@@ -157,6 +157,22 @@ class BoundingBox(
         val maxLat: Double,
         val maxLon: Double
 ) {
+    companion object {
+        fun calcBoundingBox(location: Location, distance: Int): BoundingBox {
+            val minLoc = translateLocationByMeters(location, -distance, -distance)
+            val maxLoc = translateLocationByMeters(location, distance, distance)
+            return BoundingBox(minLoc.latitude, minLoc.longitude, maxLoc.latitude, maxLoc.longitude)
+        }
+
+        // https://gis.stackexchange.com/questions/2951/algorithm-for-offsetting-a-latitude-longitude-by-some-amount-of-meters
+        private fun translateLocationByMeters(location: Location, transX: Int, transY: Int): Location {
+            val result = Location("")
+            result.latitude = location.latitude + (transY / 111111.0f)
+            result.longitude = location.longitude - (transX / (111111.0f * cos(location.latitude)))
+            return result
+        }
+    }
+
     fun isBoundingBoxValid(location: Location, minDistFromBBEdge: Int): Boolean {
         val tmpLocation = Location("")
 
