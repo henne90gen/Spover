@@ -27,31 +27,12 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
 
     companion object {
         private var TAG = SpeedLimitService::class.java.simpleName
-        // threshold in m for rejecting extracted speed limit because the closest way is to far away
-        private var MAX_DISTANCE_FOR_CLOSEST_WAY = 30
 
-        /**
-         * find the current speed limit
-         * (based on last two location and way data for the current bounding box)
-         */
-        fun findSpeedLimit(location: Location, lastLocation: Location, wayMap: LinkedHashMap<Way, List<Node>>): Int {
-            if (wayMap.size == 0) {
-                Log.e(TAG, "Waymap is empty, can't get a speed limit")
-                return -1
-            }
-            //
-            // Todo needs to be tested for working correctly
-            // how accurate is it for:
-            //      - the end of streets
-            //      - changes in direction
-            //      - small/fast speeds
-            //
-            // when last street and wannabe new street are close it's maybe better to keep the old one
-            // despite beeing a little bit closer to the new one
-            //
+        fun getClosestWay(location: Location, lastLocation: Location, wayMap: LinkedHashMap<Way, List<Node>>): Way? {
+            if (wayMap.size == 0) return null
 
             var minDistance = Float.POSITIVE_INFINITY
-            var closestWay: Way? = null
+            var result: Way? = null
             val nodeLocation = Location("")
 
             for ((way: Way, nodes:List<Node>) in wayMap) {
@@ -62,46 +43,48 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
                     val currNodeCurrLocDistance = location.distanceTo(nodeLocation)
                     if ((lastNodeLastLocDistance + currNodeCurrLocDistance) < minDistance) {
                         minDistance = lastNodeLastLocDistance + currNodeCurrLocDistance
-                        closestWay = way
+                        result = way
                     }
                     lastNodeLastLocDistance = lastLocation.distanceTo(nodeLocation)
                 }
             }
 
-            return when {
-                closestWay == null -> {
-                    Log.e(TAG, "Error while figuring out which way we are on")
-                    -1
-                }
-                // if the closest way is to far away we don't accept it
-                minDistance/2 > 500 -> {
-                    Log.e(TAG, "Closest way is to far away ${minDistance/2}m")
+            // if the closest way is to far away we don't accept it
+            if (minDistance/2 > 500) {
+                Log.e(TAG, "Closest way is to far away ${minDistance/2}m")
+                result = null
+            }
+
+            Log.d(TAG, "nearest way is around ${minDistance/2}m away and has a speed limit of ${extractSpeedLimit(result)}km/h")
+            return result
+        }
+
+        /**
+         * find the current speed limit (based on last two location and way data for the current bounding box)
+         */
+        fun extractSpeedLimit(way: Way?): Int {
+            return when (way) {
+                null -> {
+                    Log.e(TAG, "current way is undefined, no speed limit available")
                     -1
                 }
                 else -> {
-                    Log.d(TAG, "nearest way is around ${minDistance/2}m away and has a speed limit of ${getWayMaxSpeed(closestWay)}km/h")
-                    getWayMaxSpeed(closestWay)
+                    // Default case with speed given as integer
+                    val result = way.maxSpeed.toIntOrNull()
+                    if (result != null) {
+                        return result
+                    }
+
+                    // special speed tag where tag corresponds to a certain speed
+                    val maxSpeedTags: HashMap<String, Int> = hashMapOf("none" to 999, "walk" to 5)
+                    if (way.maxSpeed in maxSpeedTags) {
+                        return maxSpeedTags[way.maxSpeed]!!
+                    }
+
+                    Log.e(TAG, "couldn't parse ways max speed tag")
+                    -1
                 }
             }
-        }
-
-        /** extract the speed in km/h from the given way
-         * ToDo parse conditional speed limits, where speed limit depends on daytime */
-        fun getWayMaxSpeed(way: Way): Int {
-            // Default case with speed given as integer
-            val speedLimit = way.maxSpeed.toIntOrNull()
-            if (speedLimit != null) {
-                return speedLimit
-            }
-
-            // special speed tag where tag corresponds to a certain speed
-            val maxSpeedTags: HashMap<String, Int> = hashMapOf("none" to 999, "walk" to 5)
-            if (way.maxSpeed in maxSpeedTags) {
-                return maxSpeedTags[way.maxSpeed]!!
-            }
-
-            // couldn't find an appropriate speed
-            return -1
         }
     }
 
@@ -162,7 +145,7 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
         }
 
         lastLocation = Location(currentLocation)
-        currentSpeedLimit = findSpeedLimit(location, lastLocation!!, wayMap)
+        currentSpeedLimit = extractSpeedLimit(getClosestWay(location, lastLocation!!, wayMap))
         currentLocation = location
 
         speedLimitCallback(currentSpeedLimit)
