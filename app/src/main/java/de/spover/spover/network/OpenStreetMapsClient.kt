@@ -6,6 +6,7 @@ import android.app.job.JobScheduler
 import android.app.job.JobService
 import android.content.ComponentName
 import android.content.Context
+import android.location.Location
 import android.os.PersistableBundle
 import android.util.Log
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
@@ -129,6 +130,7 @@ class OpenStreetMapsClient : JobService() {
             // Close Stream and disconnect HTTPS connection.
             connection?.inputStream?.close()
             connection?.disconnect()
+
         }
     }
 
@@ -149,9 +151,36 @@ class OpenStreetMapsClient : JobService() {
     }
 }
 
-data class BoundingBox(
+class BoundingBox(
         val minLat: Double,
         val minLon: Double,
         val maxLat: Double,
         val maxLon: Double
-)
+) {
+    fun isBoundingBoxValid(location: Location, minDistFromBBEdge: Int): Boolean {
+        val tmpLocation = Location("")
+
+        // top edge
+        tmpLocation.latitude = maxLat
+        tmpLocation.longitude = location.longitude
+        if (location.distanceTo(tmpLocation) < minDistFromBBEdge || location.latitude > maxLat) return false
+        // right edge
+        tmpLocation.latitude = location.latitude
+        tmpLocation.longitude = maxLon
+        if (location.distanceTo(tmpLocation) < minDistFromBBEdge || location.longitude > maxLon) return false
+        // bottom edge
+        tmpLocation.latitude = minLat
+        tmpLocation.longitude = location.longitude
+        if (location.distanceTo(tmpLocation) < minDistFromBBEdge || location.latitude < minLat) return false
+        // left edge
+        tmpLocation.latitude = location.latitude
+        tmpLocation.longitude = minLon
+        if (location.distanceTo(tmpLocation) < minDistFromBBEdge || location.longitude < minLon) return false
+
+        return true
+    }
+
+    override fun toString(): String {
+        return "minLat: $minLat, minLon: $minLon, maxLat: $maxLat, maxLon: $maxLon"
+    }
+}

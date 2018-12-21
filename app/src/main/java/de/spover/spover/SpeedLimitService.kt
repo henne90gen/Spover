@@ -68,13 +68,21 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
                 }
             }
 
-            return if (closestWay == null) {
-                Log.e(TAG, "Error while figuring out which way we are on")
-                -1
-            } else {
-                Log.d(TAG, "nearest way is ${minDistance/2}m away")
-                Log.d(TAG, "Current speed limit is: ${closestWay.maxSpeed}")
-                getWayMaxSpeed(closestWay)
+            return when {
+                closestWay == null -> {
+                    Log.e(TAG, "Error while figuring out which way we are on")
+                    -1
+                }
+                // if the closest way is to far away we don't accept it
+                minDistance/2 > 500 -> {
+                    Log.e(TAG, "Closest way is to far away ${minDistance/2}m")
+                    -1
+                }
+                else -> {
+                    Log.d(TAG, "nearest way is around ${minDistance/2}m away")
+                    Log.d(TAG, "Current speed limit is ${closestWay.maxSpeed}km/h")
+                    getWayMaxSpeed(closestWay)
+                }
             }
         }
 
@@ -120,13 +128,18 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
         ReadFromDBAsyncTask(this, boundingBox).execute()
     }
 
+    /**
+     * callback for async reading task, updates the wayMap contents if the read data
+     * corresponds to the current bounding box
+     */
     fun onSpeedDataLoaded(request: Request, wayMap: LinkedHashMap<Way, List<Node>>) {
         Log.d(TAG, "Loaded speed data for $request from DB")
         this.wayMap = wayMap
 
         // check if request bounding box and the current bounding box are equal
         val bbEqual = boundingBox == BoundingBox(request.minLat, request.minLon, request.maxLat, request.maxLon)
-        if (false) {
+        if (bbEqual) {
+            Log.d(TAG, "Got updated data from database for $boundingBox")
             isDataUpToDate = true
         }
     }
@@ -153,11 +166,6 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
         currentSpeedLimit = findSpeedLimit(location, lastLocation!!, wayMap)
         currentLocation = location
 
-
-        // Todo if no bounding box exists create one
-        // Todo if bounding box is coming close to end create new one in background
-
-
         speedLimitCallback(currentSpeedLimit)
     }
 
@@ -182,7 +190,6 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
         val db = AppDatabase.createBuilder(speedLimitService.context).build()
         var request: Request? = null
         var wayMap: LinkedHashMap<Way, List<Node>> = linkedMapOf()
-        var nodes: MutableList<Node> = mutableListOf()
 
         private var TAG = ReadFromDBAsyncTask::class.java.simpleName
 
@@ -200,6 +207,7 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
             return null
         }
 
+        // called after doInBackground finished
         override fun onPostExecute(result: String?) {
             super.onPostExecute(result)
             if (request != null) {

@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.nfc.Tag
 import android.os.Bundle
 import androidx.core.content.ContextCompat
 import android.util.Log
@@ -31,8 +32,8 @@ class LocationService(var context: Context, val speedCallback: SpeedCallback?, v
     private val speedList = ArrayList<Double>()
 
     var boundingBox: BoundingBox? = null
-    private var minValidDistanceFromBoundingBoxEdge = 200
-    private var newBoundingBoxDistFromLocation = 500
+    private var newBoundingBoxDistFromLocation = 1000
+    private var minBoundingBoxDistFromEdge = 200
 
     init {
         if (ContextCompat.checkSelfPermission(context,
@@ -62,10 +63,15 @@ class LocationService(var context: Context, val speedCallback: SpeedCallback?, v
             speedCallback?.invoke(speed)
         }
 
-        Log.d(TAG,"Bounding box valid ${isBoundingBoxValid(location)}")
-        if (!isBoundingBoxValid(location)) {
+        if (boundingBox != null) {
+            Log.d(TAG, "Bounding box valid ${boundingBox!!.isBoundingBoxValid(location, minBoundingBoxDistFromEdge)}")
+            Log.d(TAG, "bb is $boundingBox and location is ${location.latitude}, ${location.longitude}")
+        }
+
+        if (boundingBox == null || !boundingBox!!.isBoundingBoxValid(location, minBoundingBoxDistFromEdge)) {
             val newBoundingBox = calcBoundingBox(location, newBoundingBoxDistFromLocation )
             fetchNewData(newBoundingBox)
+            Log.d(TAG, "is new bb $newBoundingBox valid: ${newBoundingBox.isBoundingBoxValid(location, minBoundingBoxDistFromEdge)}")
             boundingBox = newBoundingBox
             bBoxCallback?.invoke(newBoundingBox)
         }
@@ -73,32 +79,6 @@ class LocationService(var context: Context, val speedCallback: SpeedCallback?, v
         lastLocation = location
         lastTime = currentTime
         locationCallback?.invoke(location)
-    }
-
-    private fun isBoundingBoxValid(location: Location): Boolean {
-        if (boundingBox == null) {
-            return false
-        }
-        val tmpLocation = Location("")
-
-        // top edge
-        tmpLocation.latitude = boundingBox!!.maxLat
-        tmpLocation.longitude = location.longitude
-        if (location.distanceTo(tmpLocation) < minValidDistanceFromBoundingBoxEdge) return false
-        // right edge
-        tmpLocation.latitude = location.latitude
-        tmpLocation.longitude = boundingBox!!.maxLon
-        if (location.distanceTo(tmpLocation) < minValidDistanceFromBoundingBoxEdge) return false
-        // bottom edge
-        tmpLocation.latitude = boundingBox!!.minLat
-        tmpLocation.longitude = location.longitude
-        if (location.distanceTo(tmpLocation) < minValidDistanceFromBoundingBoxEdge) return false
-        // left edge
-        tmpLocation.latitude = location.latitude
-        tmpLocation.longitude = boundingBox!!.minLon
-        if (location.distanceTo(tmpLocation) < minValidDistanceFromBoundingBoxEdge) return false
-
-        return true
     }
 
     /**
@@ -114,7 +94,7 @@ class LocationService(var context: Context, val speedCallback: SpeedCallback?, v
     private fun translateLocationByMeters(location: Location, transX: Int, transY: Int): Location {
         val tmpLocation = Location("")
         tmpLocation.latitude = location.latitude + (transY / 111111.0f)
-        tmpLocation.longitude = location.longitude + (transX / (111111.0f * cos(location.latitude)))
+        tmpLocation.longitude = location.longitude - (transX / (111111.0f * cos(location.latitude)))
         return tmpLocation
     }
 
