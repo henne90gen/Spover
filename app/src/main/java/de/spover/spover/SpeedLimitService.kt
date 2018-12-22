@@ -20,7 +20,7 @@ enum class SpeedMode {
 }
 
 
-typealias SpeedLimitChangedCallback = (Int) -> Unit
+typealias SpeedLimitChangedCallback = (String) -> Unit
 typealias SpeedModeChangeCallback = () -> Unit
 
 class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimitChangedCallback, val speedModeCallback: SpeedModeChangeCallback) {
@@ -62,27 +62,27 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
         /**
          * find the current speed limit (based on last two location and way data for the current bounding box)
          */
-        fun extractSpeedLimit(way: Way?): Int {
+        fun extractSpeedLimit(way: Way?): Pair<Int, String> {
             return when (way) {
                 null -> {
                     Log.e(TAG, "current way is undefined, no speed limit available")
-                    -1
+                    Pair(Int.MAX_VALUE, "no_w")
                 }
                 else -> {
                     // Default case with speed given as integer
                     val result = way.maxSpeed.toIntOrNull()
                     if (result != null) {
-                        return result
+                        return Pair(result, result.toString())
                     }
 
                     // special speed tag where tag corresponds to a certain speed
-                    val maxSpeedTags: HashMap<String, Int> = hashMapOf("none" to 999, "walk" to 5)
+                    val maxSpeedTags: HashMap<String, Pair<Int, String>> = hashMapOf("none" to Pair(Int.MAX_VALUE, "inf"), "walk" to Pair(5, "walk"))
                     if (way.maxSpeed in maxSpeedTags) {
                         return maxSpeedTags[way.maxSpeed]!!
                     }
 
                     Log.e(TAG, "couldn't parse ways max speed tag")
-                    -1
+                    Pair(Int.MAX_VALUE, "c_p")
                 }
             }
         }
@@ -93,7 +93,7 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
     private var currentLocation: Location? = null
     private var lastLocation: Location? = null
 
-    private var currentSpeedLimit: Int = 0 // current speed limit in kph
+    private var currentSpeedLimit: Pair<Int, String> = Pair(Int.MAX_VALUE, "unknown") // current speed limit as number (in kph) and textual description
     var speedMode: SpeedMode = SpeedMode.GREEN
     // linked since we want to preserve the node order
     private var wayMap: LinkedHashMap<Way, List<Node>> = linkedMapOf()
@@ -115,13 +115,13 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
      * corresponds to the current bounding box
      */
     fun onSpeedDataLoaded(request: Request, wayMap: LinkedHashMap<Way, List<Node>>) {
-        Log.d(TAG, "Loaded speed data for $request from DB")
-        this.wayMap = wayMap
+        //Log.d(TAG, "Loaded speed data for $request from DB")
 
         // check if request bounding box and the current bounding box are equal
-        val bbEqual = boundingBox == BoundingBox(request.minLat, request.minLon, request.maxLat, request.maxLon)
+        val bbEqual = boundingBox.compareTo(BoundingBox(request.minLat, request.minLon, request.maxLat, request.maxLon))
         if (bbEqual) {
             Log.d(TAG, "Got updated data from database for $boundingBox")
+            this.wayMap = wayMap
             isDataUpToDate = true
         }
     }
@@ -148,16 +148,16 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
         currentSpeedLimit = extractSpeedLimit(getClosestWay(location, lastLocation!!, wayMap))
         currentLocation = location
 
-        speedLimitCallback(currentSpeedLimit)
+        speedLimitCallback(currentSpeedLimit.second)
     }
 
     fun updateSpeedMode(currentSpeed: Int) {
         val threshold = settingsStore.get(SpoverSettings.SPEED_THRESHOLD)
 
         speedMode = when {
-            currentSpeed <= currentSpeedLimit + (threshold/2) -> SpeedMode.GREEN
-            currentSpeed < currentSpeedLimit + threshold -> SpeedMode.YELLOW
-            currentSpeed > currentSpeedLimit + threshold -> SpeedMode.RED
+            currentSpeed <= currentSpeedLimit.first + (threshold/2) -> SpeedMode.GREEN
+            currentSpeed < currentSpeedLimit.first + threshold -> SpeedMode.YELLOW
+            currentSpeed > currentSpeedLimit.first + threshold -> SpeedMode.RED
             else -> {
                 Log.e(TAG, "Unknown speed mode for speed: $currentSpeed and speed limit: $currentSpeedLimit")
                 SpeedMode.GREEN
@@ -195,7 +195,6 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
             if (request != null) {
                 speedLimitService.onSpeedDataLoaded(request!!, wayMap)
             }
-
             db.close()
         }
     }

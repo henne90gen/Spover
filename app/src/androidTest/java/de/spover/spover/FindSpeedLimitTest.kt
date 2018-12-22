@@ -31,8 +31,6 @@ open class FindSpeedLimitTest {
                 Node(1, 13.75557, 51.02651, "1"))
     }
 
-    // test fails, for debugging seeing the log would be useful but isn't possible by default
-    // https://stackoverflow.com/questions/35562238/log-messages-in-android-studio-junit-test/43032075
     @Test
     fun findsCorrectSpeedLimit() {
         lastLocation.latitude = 13.75557
@@ -41,7 +39,18 @@ open class FindSpeedLimitTest {
         location.latitude = 13.75487
         location.longitude = 51.02706
 
-        assertEquals(42, SpeedLimitService.extractSpeedLimit(SpeedLimitService.getClosestWay(location, lastLocation, wayMap)))
-        assertEquals(24, SpeedLimitService.extractSpeedLimit(SpeedLimitService.getClosestWay(lastLocation, location, wayMap)))
+        assertEquals(Pair(42, "42"), SpeedLimitService.extractSpeedLimit(SpeedLimitService.getClosestWay(location, lastLocation, wayMap)))
+        assertEquals(Pair(24, "24"), SpeedLimitService.extractSpeedLimit(SpeedLimitService.getClosestWay(lastLocation, location, wayMap)))
+    }
+
+    @Test
+    fun doesNotFindWayBecauseWaysAreToFarAway() {
+        lastLocation.latitude = 13.7797
+        lastLocation.longitude = 51.0210
+
+        location.latitude = 13.7797
+        location.longitude = 51.0210
+
+        assertEquals(null, SpeedLimitService.getClosestWay(location, lastLocation, wayMap))
     }
 }

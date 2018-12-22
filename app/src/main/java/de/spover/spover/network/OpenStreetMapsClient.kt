@@ -168,7 +168,7 @@ class BoundingBox(
         private fun translateLocationByMeters(location: Location, transX: Int, transY: Int): Location {
             val result = Location("")
             result.latitude = location.latitude + (transY / 111111.0f)
-            result.longitude = location.longitude - (transX / (111111.0f * cos(location.latitude)))
+            result.longitude = location.longitude + (transX / (111111.0f * Math.cos(Math.toRadians(location.latitude))))
             return result
         }
     }
@@ -198,5 +198,12 @@ class BoundingBox(
 
     override fun toString(): String {
         return "minLat: $minLat, minLon: $minLon, maxLat: $maxLat, maxLon: $maxLon"
+    }
+
+    fun compareTo(boundingBox: BoundingBox): Boolean {
+        return minLat == boundingBox.minLat
+                && minLon == boundingBox.minLon
+                && maxLat == boundingBox.maxLat
+                && maxLon == boundingBox.maxLon
     }
 }

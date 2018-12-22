@@ -12,8 +12,6 @@ import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
 import de.spover.spover.*
-import de.spover.spover.network.BoundingBox
-import de.spover.spover.network.OpenStreetMapsClient
 import de.spover.spover.settings.SettingsStore
 import de.spover.spover.settings.SpoverSettings
 import kotlin.math.roundToInt
@@ -73,8 +71,8 @@ class OverlayService : Service(), View.OnTouchListener {
     }
 
     // OSM provides speed limits in km/h
-    private fun setSpeedLimit(speedLimitInKph: Int) {
-        tvSpeedLimit.text = speedLimitInKph.toString()
+    private fun setSpeedLimit(speedLimitText: String) {
+        tvSpeedLimit.text = speedLimitText
     }
 
     private fun addOverlayView() {
