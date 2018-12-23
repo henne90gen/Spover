@@ -27,6 +27,7 @@ data class Way(
         var requestId: Long,
         var maxSpeed: String,
         var maxSpeedSource: String,
+        var maxSpeedConditional: String,
 
         @PrimaryKey(autoGenerate = true)
         var id: Long? = null
@@ -108,7 +109,7 @@ class Converters {
     }
 }
 
-@Database(entities = [Request::class, Way::class, Node::class], version = 1)
+@Database(entities = [Request::class, Way::class, Node::class], version = 2)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     companion object {

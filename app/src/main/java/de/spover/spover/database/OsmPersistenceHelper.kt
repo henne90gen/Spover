@@ -35,13 +35,15 @@ class OsmPersistenceHelper {
         osm.ways.forEach {
             var maxSpeed = ""
             var maxSpeedSource = ""
+            var maxSpeedConditional = ""
             it.tags.forEach { tag ->
                 when (tag.k) {
                     "maxspeed" -> maxSpeed = tag.v
                     "maxspeedsource" -> maxSpeedSource = tag.v
+                    "maxspeed:conditional" -> maxSpeedConditional = tag.v
                 }
             }
-            val way = Way(request.id!!, maxSpeed, maxSpeedSource)
+            val way = Way(request.id!!, maxSpeed, maxSpeedSource, maxSpeedConditional)
             way.id = db.wayDao().insert(way)
             it.nodeRefs.forEach { nodeRef ->
                 val node = nodes[nodeRef.ref] ?: return

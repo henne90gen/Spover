@@ -22,11 +22,11 @@ open class FindSpeedLimitTest {
 
     @Before
     fun setupWays() {
-        wayMap[Way(1, "42", "sign", 1)] = listOf(
+        wayMap[Way(1, "42", "sign", "", 1)] = listOf(
                 Node(1, 13.75557, 51.02651, "1"),
                 Node(1, 13.75487, 51.02706, "2"))
 
-        wayMap[Way(1, "24", "sign", 1)] = listOf(
+        wayMap[Way(1, "24", "sign", "", 1)] = listOf(
                 Node(1, 13.75487, 51.02706, "2"),
                 Node(1, 13.75557, 51.02651, "1"))
     }

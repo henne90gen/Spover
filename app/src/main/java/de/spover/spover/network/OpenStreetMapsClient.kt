@@ -89,7 +89,7 @@ class OpenStreetMapsClient : JobService() {
         val url = createUrl(boundingBox)
         val downloadResult = download(url)
         val osm = xmlMapper.readValue<Osm>(downloadResult, Osm::class.java)
-        val db = AppDatabase.createBuilder(context).build()
+        val db = AppDatabase.createBuilder(context).fallbackToDestructiveMigration().build()
 
         OsmPersistenceHelper().persistOsmXmlResult(db, osm, boundingBox)
     }

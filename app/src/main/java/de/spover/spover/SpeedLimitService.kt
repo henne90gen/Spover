@@ -11,6 +11,7 @@ import android.os.AsyncTask
 import de.spover.spover.database.Node
 import de.spover.spover.database.Request
 import de.spover.spover.database.Way
+import java.util.regex.Pattern
 
 
 enum class SpeedMode {
@@ -69,6 +70,14 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
                     Pair(Int.MAX_VALUE, "no_w")
                 }
                 else -> {
+                    Log.d(TAG,"conditional ${way.maxSpeedConditional}")
+
+                    var conditionsMap = mapOf(
+                            Pair({ condition: String -> isTimeCondition(condition)}, { condition: String -> isTimeConditionFulfilled(condition) }),
+                            Pair({ condition: String -> isDayTimeCondition(condition)}, {}),
+                            Pair({ condition: String -> isWeatherCondition(condition)}, {})
+                    )
+
                     // Default case with speed given as integer
                     val result = way.maxSpeed.toIntOrNull()
                     if (result != null) {
@@ -85,6 +94,41 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
                     Pair(Int.MAX_VALUE, "c_p")
                 }
             }
+        }
+
+        fun isTimeCondition(condition: String): Boolean {
+            // should match conditional speed limits as: "30 @ (06:00-20:00)"
+            return condition matches Regex("[0-9]+ ?@ ?[(][0-2][0-9]:[0-5][0-9] ?[-] ?[0-2][0-9]:[0-5][0-9][)]")
+        }
+
+        fun isDayTimeCondition(condition: String): Boolean {
+            // should match conditional speed limits as: 30 @ (Mo-Fr 06:00-17:00)
+            // Todo
+            return condition matches Regex("")
+        }
+
+        fun isWeatherCondition(condition: String): Boolean {
+            // should match conditional speed limits as: 40 @ wet
+            // Todo
+            return condition matches Regex("")
+        }
+
+        fun isTimeConditionFulfilled(condition: String): Boolean {
+            var result = false
+            // Todo
+
+            return result
+        }
+
+        fun extractSpeedLimitFromCondition(condition: String): Int {
+            var result = -1
+            val regex = Pattern.compile("[0-9]+")
+            val matcher = regex.matcher(condition)
+            if (matcher.find()) {
+                val subString = matcher.group().toIntOrNull()
+                if (subString != null) result = subString
+            }
+            return result
         }
     }
 
@@ -169,7 +213,7 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
     /** if a request with the given bounding box exists return all ways and nodes corresponding
      * to that request */
     private class ReadFromDBAsyncTask(var speedLimitService: SpeedLimitService, var boundingBox: BoundingBox) : AsyncTask<Void, Void, String>() {
-        val db = AppDatabase.createBuilder(speedLimitService.context).build()
+        val db = AppDatabase.createBuilder(speedLimitService.context).fallbackToDestructiveMigration().build()
         var request: Request? = null
         var wayMap: LinkedHashMap<Way, List<Node>> = linkedMapOf()
 
