@@ -158,7 +158,7 @@ class BoundingBox(
         val maxLon: Double
 ) {
     companion object {
-        fun calcBoundingBox(location: Location, distance: Int): BoundingBox {
+        fun createBoundingBox(location: Location, distance: Int): BoundingBox {
             val minLoc = translateLocationByMeters(location, -distance, -distance)
             val maxLoc = translateLocationByMeters(location, distance, distance)
             return BoundingBox(minLoc.latitude, minLoc.longitude, maxLoc.latitude, maxLoc.longitude)

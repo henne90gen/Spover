@@ -28,108 +28,6 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
 
     companion object {
         private var TAG = SpeedLimitService::class.java.simpleName
-
-        fun getClosestWay(location: Location, lastLocation: Location, wayMap: LinkedHashMap<Way, List<Node>>): Way? {
-            if (wayMap.size == 0) return null
-
-            var minDistance = Float.POSITIVE_INFINITY
-            var result: Way? = null
-            val nodeLocation = Location("")
-
-            for ((way: Way, nodes:List<Node>) in wayMap) {
-                var lastNodeLastLocDistance = Float.POSITIVE_INFINITY
-                for (node: Node in nodes) {
-                    nodeLocation.latitude = node.latitude
-                    nodeLocation.longitude = node.longitude
-                    val currNodeCurrLocDistance = location.distanceTo(nodeLocation)
-                    if ((lastNodeLastLocDistance + currNodeCurrLocDistance) < minDistance) {
-                        minDistance = lastNodeLastLocDistance + currNodeCurrLocDistance
-                        result = way
-                    }
-                    lastNodeLastLocDistance = lastLocation.distanceTo(nodeLocation)
-                }
-            }
-
-            // if the closest way is to far away we don't accept it
-            if (minDistance/2 > 500) {
-                Log.e(TAG, "Closest way is to far away ${minDistance/2}m")
-                result = null
-            }
-
-            Log.d(TAG, "nearest way is around ${minDistance/2}m away and has a speed limit of ${extractSpeedLimit(result)}km/h")
-            return result
-        }
-
-        /**
-         * find the current speed limit (based on last two location and way data for the current bounding box)
-         */
-        fun extractSpeedLimit(way: Way?): Pair<Int, String> {
-            return when (way) {
-                null -> {
-                    Log.e(TAG, "current way is undefined, no speed limit available")
-                    Pair(Int.MAX_VALUE, "no_w")
-                }
-                else -> {
-                    Log.d(TAG,"conditional ${way.maxSpeedConditional}")
-
-                    var conditionsMap = mapOf(
-                            Pair({ condition: String -> isTimeCondition(condition)}, { condition: String -> isTimeConditionFulfilled(condition) }),
-                            Pair({ condition: String -> isDayTimeCondition(condition)}, {}),
-                            Pair({ condition: String -> isWeatherCondition(condition)}, {})
-                    )
-
-                    // Default case with speed given as integer
-                    val result = way.maxSpeed.toIntOrNull()
-                    if (result != null) {
-                        return Pair(result, result.toString())
-                    }
-
-                    // special speed tag where tag corresponds to a certain speed
-                    val maxSpeedTags: HashMap<String, Pair<Int, String>> = hashMapOf("none" to Pair(Int.MAX_VALUE, "inf"), "walk" to Pair(5, "walk"))
-                    if (way.maxSpeed in maxSpeedTags) {
-                        return maxSpeedTags[way.maxSpeed]!!
-                    }
-
-                    Log.e(TAG, "couldn't parse ways max speed tag")
-                    Pair(Int.MAX_VALUE, "c_p")
-                }
-            }
-        }
-
-        fun isTimeCondition(condition: String): Boolean {
-            // should match conditional speed limits as: "30 @ (06:00-20:00)"
-            return condition matches Regex("[0-9]+ ?@ ?[(][0-2][0-9]:[0-5][0-9] ?[-] ?[0-2][0-9]:[0-5][0-9][)]")
-        }
-
-        fun isDayTimeCondition(condition: String): Boolean {
-            // should match conditional speed limits as: 30 @ (Mo-Fr 06:00-17:00)
-            // Todo
-            return condition matches Regex("")
-        }
-
-        fun isWeatherCondition(condition: String): Boolean {
-            // should match conditional speed limits as: 40 @ wet
-            // Todo
-            return condition matches Regex("")
-        }
-
-        fun isTimeConditionFulfilled(condition: String): Boolean {
-            var result = false
-            // Todo
-
-            return result
-        }
-
-        fun extractSpeedLimitFromCondition(condition: String): Int {
-            var result = -1
-            val regex = Pattern.compile("[0-9]+")
-            val matcher = regex.matcher(condition)
-            if (matcher.find()) {
-                val subString = matcher.group().toIntOrNull()
-                if (subString != null) result = subString
-            }
-            return result
-        }
     }
 
     private var settingsStore: SettingsStore = SettingsStore(context)
@@ -189,7 +87,7 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
         }
 
         lastLocation = Location(currentLocation)
-        currentSpeedLimit = extractSpeedLimit(getClosestWay(location, lastLocation!!, wayMap))
+        currentSpeedLimit = SpeedLimitExtractor.extractSpeedLimit(SpeedLimitExtractor.getClosestWay(location, lastLocation!!, wayMap))
         currentLocation = location
 
         speedLimitCallback(currentSpeedLimit.second)

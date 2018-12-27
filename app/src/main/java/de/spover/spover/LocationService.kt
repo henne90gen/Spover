@@ -62,7 +62,7 @@ class LocationService(var context: Context, val speedCallback: SpeedCallback?, v
         }
 
         if (!boundingBox.isBoundingBoxValid(location, minBoundingBoxDistFromEdge)) {
-            boundingBox = BoundingBox.calcBoundingBox(location, newBoundingBoxDistFromLocation )
+            boundingBox = BoundingBox.createBoundingBox(location, newBoundingBoxDistFromLocation )
             fetchNewData(boundingBox)
             bBoxCallback?.invoke(boundingBox)
         }
