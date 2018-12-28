@@ -30,7 +30,6 @@ android {
             resources.srcDirs += ['src/androidTest/resources']
         }
     }
-
 }
 
 dependencies {
