@@ -60,7 +60,7 @@ class SpeedLimitExtractor {
 
                     for ((isType, isFulfilled) in conditionsMap) {
                         if (isType(way.maxSpeedConditional) && isFulfilled(way.maxSpeedConditional)) {
-                            val speedLimit = extractSpeedLimitFromCondition(way.maxSpeedConditional)
+                            val speedLimit = extractSpeedLimitNumberFromCondition(way.maxSpeedConditional)
                             return Pair(speedLimit, speedLimit.toString())
                         }
                     }
@@ -99,8 +99,8 @@ class SpeedLimitExtractor {
         }
 
         fun isTimeConditionFulfilled(condition: String): Boolean {
-            var time1 = Date()
-            var time2 = Date()
+            val time1: Date
+            val time2: Date
 
             val regex = Pattern.compile("[0-2][0-9]:[0-5][0-9]")
             val matcher = regex.matcher(condition)
@@ -119,18 +119,38 @@ class SpeedLimitExtractor {
             val currTimeStr = simpleDateFormat.format(currTime)
             currTime = simpleDateFormat.parse(currTimeStr)
 
-            var bef = currTime.before(time1)
-            var af = currTime.after(time2)
             return (currTime.after(time1) && currTime.before(time2))
                     || (currTime.before(time1) && currTime.before(time2) && time1.time - currTime.time < time2.time - currTime.time)
                     || (currTime.after(time1) && currTime.after(time2) && currTime.time - time1.time > currTime.time - time2.time)
         }
 
-        fun isDayTimeConditionFulfilled(condition: String): Boolean {
-            var result = false
-            // Todo
+        private fun isWeekdayConditionFulfilled(condition: String): Boolean {
+            val weekDays = listOf("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")
+            val day1: Int
+            val day2: Int
+            val currDay: Int
 
-            return result
+            val regex = Pattern.compile("(Mo|Tu|We|Th|Fr|Sa|Su)")
+            val matcher = regex.matcher(condition)
+
+            if (matcher.find()) {
+                day1 = weekDays.indexOf(matcher.group())
+            } else return false
+            if (matcher.find()) {
+                day2 = weekDays.indexOf(matcher.group())
+            } else return false
+
+            val calendar = Calendar.getInstance()
+            val currDayLongName = calendar.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.LONG, Locale.getDefault())
+            currDay = weekDays.indexOf(currDayLongName.substring(0, 2))
+
+            return (currDay in day1..day2)
+                    || (currDay < day1 && currDay < day2 && day1 - currDay < day2 - currDay)
+                    || (currDay > day1 && currDay > day2 && currDay - day1 > currDay - day2)
+        }
+
+        fun isDayTimeConditionFulfilled(condition: String): Boolean {
+            return isTimeConditionFulfilled(condition) && isWeekdayConditionFulfilled(condition)
         }
 
         fun isWeatherConditionFulfilled(condition: String): Boolean {
@@ -138,7 +158,7 @@ class SpeedLimitExtractor {
             return false
         }
 
-        fun extractSpeedLimitFromCondition(condition: String): Int {
+        fun extractSpeedLimitNumberFromCondition(condition: String): Int {
             var result = -1
             val regex = Pattern.compile("[0-9]+")
             val matcher = regex.matcher(condition)
