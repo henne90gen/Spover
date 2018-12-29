@@ -55,8 +55,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun initUI() {
         locationPermissionSwitch = findViewById(R.id.switchLocationPermission)
+        locationPermissionSwitch.isChecked = permissions.canAccessLocation()
         locationPermissionSwitch.setOnCheckedChangeListener { _, isChecked -> this.checkLocationPermission(isChecked) }
-        checkLocationPermission(true)
 
         overlayPermissionSwitch = findViewById(R.id.switchOverlayPermission)
         overlayPermissionSwitch.isChecked = permissions.canDrawOverlays()
@@ -115,9 +115,6 @@ class MainActivity : AppCompatActivity() {
         if (!permissions.canAccessLocation() && isChecked) {
             Log.e(TAG, "Did not grant location permission")
             locationPermissionSwitch.isChecked = false
-            // if permission got denied the first time the next time the permission dialog opens
-            // a "never ask again" option appears. That case can somehow get covered by PermissionRationale
-            //if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) { } else {
             ActivityCompat.requestPermissions(this,
                     arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST)
         } else if (permissions.canAccessLocation() && !isChecked) {
