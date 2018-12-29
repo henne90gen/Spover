@@ -14,6 +14,8 @@ import android.widget.TextView
 import de.spover.spover.*
 import de.spover.spover.settings.SettingsStore
 import de.spover.spover.settings.SpoverSettings
+import de.spover.spover.speedlimit.SpeedLimitService
+import de.spover.spover.speedlimit.SpeedMode
 import kotlin.math.roundToInt
 
 class OverlayService : Service(), View.OnTouchListener {

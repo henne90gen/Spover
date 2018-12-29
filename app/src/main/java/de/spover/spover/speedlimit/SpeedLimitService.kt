@@ -1,4 +1,4 @@
-package de.spover.spover
+package de.spover.spover.speedlimit
 
 import android.content.Context
 import android.location.Location
@@ -7,6 +7,7 @@ import de.spover.spover.database.AppDatabase
 import de.spover.spover.settings.SettingsStore
 import de.spover.spover.settings.SpoverSettings
 import android.os.AsyncTask
+import de.spover.spover.BoundingBox
 import de.spover.spover.database.Node
 import de.spover.spover.database.Request
 import de.spover.spover.database.Way
@@ -54,9 +55,6 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
      * corresponds to the current bounding box
      */
     fun onSpeedDataLoaded(request: Request, wayMap: LinkedHashMap<Way, List<Node>>) {
-        //Log.d(TAG, "Loaded speed data for $request from DB")
-
-        // check if request bounding box and the current bounding box are equal
         val bbEqual = boundingBox.compareTo(BoundingBox(request.minLat, request.minLon, request.maxLat, request.maxLon))
         if (bbEqual) {
             Log.d(TAG, "Got updated data from database for $boundingBox")
@@ -92,9 +90,9 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
 
     fun updateSpeedMode(currentSpeed: Int) {
         val threshold = settingsStore.get(SpoverSettings.SPEED_THRESHOLD)
-
         speedMode = when {
-            currentSpeed <= currentSpeedLimit.first + (threshold/2) -> SpeedMode.GREEN
+            currentSpeedLimit.first + threshold < 0
+                    || currentSpeed <= currentSpeedLimit.first + (threshold/2) -> SpeedMode.GREEN
             currentSpeed < currentSpeedLimit.first + threshold -> SpeedMode.YELLOW
             currentSpeed > currentSpeedLimit.first + threshold -> SpeedMode.RED
             else -> {

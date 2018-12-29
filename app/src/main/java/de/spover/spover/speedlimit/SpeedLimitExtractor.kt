@@ -1,4 +1,4 @@
-package de.spover.spover
+package de.spover.spover.speedlimit
 
 import android.location.Location
 import android.util.Log
