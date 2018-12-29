@@ -9,7 +9,6 @@ import android.location.LocationManager
 import android.os.Bundle
 import androidx.core.content.ContextCompat
 import android.util.Log
-import de.spover.spover.network.BoundingBox
 import de.spover.spover.network.OpenStreetMapsClient
 
 typealias SpeedCallback = (Double) -> Unit

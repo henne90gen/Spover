@@ -4,15 +4,12 @@ import android.content.Context
 import android.location.Location
 import android.util.Log
 import de.spover.spover.database.AppDatabase
-import de.spover.spover.network.BoundingBox
 import de.spover.spover.settings.SettingsStore
 import de.spover.spover.settings.SpoverSettings
 import android.os.AsyncTask
 import de.spover.spover.database.Node
 import de.spover.spover.database.Request
 import de.spover.spover.database.Way
-import java.util.regex.Pattern
-
 
 enum class SpeedMode {
     GREEN,
