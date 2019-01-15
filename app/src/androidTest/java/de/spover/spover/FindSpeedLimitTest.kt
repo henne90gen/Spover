@@ -4,6 +4,7 @@ import android.location.Location
 import androidx.test.runner.AndroidJUnit4
 import de.spover.spover.database.Node
 import de.spover.spover.database.Way
+import de.spover.spover.speedlimit.SpeedLimitExtractor
 import junit.framework.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test

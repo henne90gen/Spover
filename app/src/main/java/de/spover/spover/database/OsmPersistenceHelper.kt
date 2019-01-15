@@ -1,7 +1,7 @@
 package de.spover.spover.database
 
 import android.util.Log
-import de.spover.spover.network.BoundingBox
+import de.spover.spover.BoundingBox
 import de.spover.spover.network.Osm
 import java.time.LocalDateTime
 

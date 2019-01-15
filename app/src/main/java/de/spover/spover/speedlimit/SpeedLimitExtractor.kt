@@ -1,4 +1,4 @@
-package de.spover.spover
+package de.spover.spover.speedlimit
 
 import android.location.Location
 import android.util.Log
@@ -34,7 +34,7 @@ class SpeedLimitExtractor {
             }
 
             // if the closest way is to far away we don't accept it
-            if (minDistance / 2 > 500) {
+            if (minDistance / 2 > 80) {
                 Log.e(TAG, "Closest way is to far away ${minDistance / 2}m")
                 result = null
             }
@@ -47,40 +47,54 @@ class SpeedLimitExtractor {
             return when (way) {
                 null -> {
                     Log.e(TAG, "current way is undefined, no speed limit available")
-                    Pair(Int.MAX_VALUE, "no_w")
+                    Pair(Int.MAX_VALUE, "--")
                 }
                 else -> {
-                    Log.d(TAG, "conditional ${way.maxSpeedConditional}")
-
-                    val conditionsMap = mapOf(
-                            Pair({ condition: String -> isTimeCondition(condition) }, { condition: String -> isTimeConditionFulfilled(condition) }),
-                            Pair({ condition: String -> isDayTimeCondition(condition) }, { condition: String -> isDayTimeConditionFulfilled(condition) }),
-                            Pair({ condition: String -> isWeatherCondition(condition) }, { condition: String -> isWeatherConditionFulfilled(condition) })
-                    )
-
-                    for ((isType, isFulfilled) in conditionsMap) {
-                        if (isType(way.maxSpeedConditional) && isFulfilled(way.maxSpeedConditional)) {
-                            val speedLimit = extractSpeedLimitNumberFromCondition(way.maxSpeedConditional)
-                            return Pair(speedLimit, speedLimit.toString())
-                        }
-                    }
-
-                    // Default case with speed given as integer
-                    val result = way.maxSpeed.toIntOrNull()
-                    if (result != null) {
-                        return Pair(result, result.toString())
-                    }
-
-                    // special speed tag where tag corresponds to a certain speed
-                    val maxSpeedTags: HashMap<String, Pair<Int, String>> = hashMapOf("none" to Pair(Int.MAX_VALUE, "inf"), "walk" to Pair(5, "walk"))
-                    if (way.maxSpeed in maxSpeedTags) {
-                        return maxSpeedTags[way.maxSpeed]!!
-                    }
-
-                    Log.e(TAG, "couldn't parse ways max speed tag")
-                    Pair(Int.MAX_VALUE, "c_p")
+                    var result = getConditionalSpeedLimit(way)
+                    if (result == null) result = getDefaultSpeedLimit(way)
+                    if (result == null) result = getSpecialTagSpeedLimit(way)
+                    if (result == null) result = unknownSpeedLimit()
+                    return result
                 }
             }
+        }
+
+        private fun getConditionalSpeedLimit(way: Way): Pair<Int, String>? {
+            var result: Pair<Int, String>? = null
+            val conditionsMap = mapOf(
+                    Pair({ condition: String -> isTimeCondition(condition) }, { condition: String -> isTimeConditionFulfilled(condition) }),
+                    Pair({ condition: String -> isDayTimeCondition(condition) }, { condition: String -> isDayTimeConditionFulfilled(condition) }),
+                    Pair({ condition: String -> isWeatherCondition(condition) }, { condition: String -> isWeatherConditionFulfilled(condition) })
+            )
+            for ((isOfConditionType, isConditionFulfilled) in conditionsMap) {
+                if (isOfConditionType(way.maxSpeedConditional) && isConditionFulfilled(way.maxSpeedConditional)) {
+                    val speedLimit = extractSpeedLimitNumberFromCondition(way.maxSpeedConditional)
+                    result = Pair(speedLimit, speedLimit.toString())
+                    break
+                }
+            }
+            return result
+        }
+
+        private fun getDefaultSpeedLimit(way: Way): Pair<Int, String>? {
+            var result: Pair<Int, String>? = null
+            if (way.maxSpeed.toIntOrNull() != null) {
+                result = Pair(way.maxSpeed.toInt(), way.maxSpeed)
+            }
+            return result
+        }
+
+        private fun getSpecialTagSpeedLimit(way: Way): Pair<Int, String>? {
+            var result: Pair<Int, String>? = null
+            val maxSpeedTags: HashMap<String, Pair<Int, String>> = hashMapOf("none" to Pair(Int.MAX_VALUE, "inf"), "walk" to Pair(5, "walk"))
+            if (way.maxSpeed in maxSpeedTags) {
+                result = maxSpeedTags[way.maxSpeed]!!
+            }
+            return result
+        }
+
+        private fun unknownSpeedLimit(): Pair<Int, String> {
+            return Pair(Int.MAX_VALUE, "--")
         }
 
         fun isTimeCondition(condition: String): Boolean {
