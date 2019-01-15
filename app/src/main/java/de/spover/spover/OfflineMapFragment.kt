@@ -33,5 +33,8 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
         googleMap.addMarker(MarkerOptions().position(sydney)
                 .title("Marker in Sydney"))
         googleMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
+
+        // This is how we can find the visible region
+        // googleMap.projection.visibleRegion.latLngBounds.northeast
     }
 }
