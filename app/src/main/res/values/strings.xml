@@ -25,4 +25,6 @@
 
     <string name="warning_option">Sound alert on speeding</string>
     <string name="et_warning_threshold">Threshold:</string>
+    <string name="show_overlay">Show Overlay</string>
+    <string name="select_offline_map">Select Offline Map</string>
 </resources>
