@@ -56,6 +56,18 @@ Work plan until 31.10.2018:
 - ~~open issues~~ ;)
 
 
-CREDITS
+## Notes
+
+To build the app, a file called keys.xml is required to be in app/src/main/res/values. This file should have the following content:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="google_maps_api_key">--- Valid Google Maps API Key ---</string>
+</resources>
+```
+
+## CREDITS
+
 Sounds from:
 https://freesound.org/people/tim.kahn/
