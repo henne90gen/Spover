@@ -50,7 +50,7 @@ class SettingsFragment : Fragment() {
         permissions = PermissionManager(context!!)
         overlayHelper = OverlayServiceHelper(context!!)
 
-        val rootView: View = inflater.inflate(R.layout.settings_fragment, container, false)
+        val rootView: View = inflater.inflate(R.layout.settings, container, false)
         return initUI(rootView)
     }
 
