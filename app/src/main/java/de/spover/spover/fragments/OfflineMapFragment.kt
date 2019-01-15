@@ -1,4 +1,4 @@
-package de.spover.spover
+package de.spover.spover.fragments
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -11,6 +11,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import de.spover.spover.R
 
 
 class OfflineMapFragment : Fragment(), OnMapReadyCallback {

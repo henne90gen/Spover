@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.widget.FrameLayout
 import android.widget.Switch
 import androidx.appcompat.app.AppCompatActivity
+import de.spover.spover.fragments.SettingsFragment
 
 
 class MainActivity : AppCompatActivity() {

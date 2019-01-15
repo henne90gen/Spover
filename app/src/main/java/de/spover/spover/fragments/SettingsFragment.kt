@@ -1,4 +1,4 @@
-package de.spover.spover
+package de.spover.spover.fragments
 
 import android.Manifest
 import android.content.Intent
@@ -17,6 +17,9 @@ import android.widget.Switch
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
+import de.spover.spover.MainActivity
+import de.spover.spover.PermissionManager
+import de.spover.spover.R
 import de.spover.spover.overlay.OverlayServiceHelper
 import de.spover.spover.settings.SettingsStore
 import de.spover.spover.settings.SpoverSettings
