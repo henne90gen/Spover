@@ -97,6 +97,7 @@ class OpenStreetMapsClient : JobService() {
 
         OsmPersistenceHelper().persistOsmXmlResult(context, osm, boundingBox)
 
+        // FIXME this does not work yet
         val intent = Intent(DOWNLOAD_COMPLETE_ACTION)
         LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
         Log.e(TAG, "Sent broadcast")

@@ -75,6 +75,7 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
         return rootView
     }
 
+    // FIXME this does not work yet
     private fun registerBroadcastReceiver() {
         val receiver = object:BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
