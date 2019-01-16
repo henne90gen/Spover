@@ -1,5 +1,6 @@
 package de.spover.spover.database
 
+import android.content.Context
 import android.util.Log
 import de.spover.spover.BoundingBox
 import de.spover.spover.network.Osm
@@ -11,10 +12,12 @@ class OsmPersistenceHelper {
         val TAG = OsmPersistenceHelper::class.simpleName
     }
 
-    fun persistOsmXmlResult(db: AppDatabase, osm: Osm, boundingBox: BoundingBox) {
+    fun persistOsmXmlResult(context: Context, osm: Osm, boundingBox: BoundingBox) {
         val startTime = System.currentTimeMillis()
         Log.i(TAG, "Writing ways to database.")
         Log.i(TAG, "Found ${osm.nodes.size} nodes and ${osm.ways.size} ways")
+
+        val db = AppDatabase.getDatabase(context)
 
         val request = Request(
                 maxLat = boundingBox.maxLat,

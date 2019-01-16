@@ -34,7 +34,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initSettingsFragment(savedInstanceState: Bundle?) {
-        if (findViewById<FrameLayout>(R.id.fragment_container) == null) {
+        // The fragment container has already been replaced by a fragment
+        if (findViewById<FrameLayout>(R.id.fragmentContainer) == null) {
             return
         }
 
@@ -53,7 +54,7 @@ class MainActivity : AppCompatActivity() {
 
         val transaction = supportFragmentManager.beginTransaction()
         val settingsFragmentTag = "settingsFragmentTag"
-        transaction.add(R.id.fragment_container, settingsFragment, settingsFragmentTag)
+        transaction.add(R.id.fragmentContainer, settingsFragment, settingsFragmentTag)
         transaction.commit()
     }
 

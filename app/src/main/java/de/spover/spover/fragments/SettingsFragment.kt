@@ -43,14 +43,14 @@ class SettingsFragment : Fragment() {
     private lateinit var speedLimitSwitch: Switch
     private lateinit var soundAlertSwitch: Switch
     private lateinit var speedThresholdET: EditText
-    private lateinit var offlineMapBtn: Button
+    private lateinit var offlineAreasBtn: Button
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         settings = SettingsStore(context!!)
         permissions = PermissionManager(context!!)
         overlayHelper = OverlayServiceHelper(context!!)
 
-        val rootView: View = inflater.inflate(R.layout.settings, container, false)
+        val rootView = inflater.inflate(R.layout.settings, container, false)
         return initUI(rootView)
     }
 
@@ -101,11 +101,11 @@ class SettingsFragment : Fragment() {
             }
         })
 
-        offlineMapBtn = rootView.findViewById(R.id.btnOfflineMap)
-        offlineMapBtn.setOnClickListener {
-            val offlineMapFragment = OfflineMapFragment()
+        offlineAreasBtn = rootView.findViewById(R.id.btnOfflineAreas)
+        offlineAreasBtn.setOnClickListener {
+            val offlineAreasFragment = OfflineAreasFragment()
             val transaction = activity!!.supportFragmentManager.beginTransaction()
-            transaction.replace(R.id.fragment_container, offlineMapFragment)
+            transaction.replace(R.id.fragmentContainer, offlineAreasFragment)
             transaction.addToBackStack(null)
             transaction.commit()
         }

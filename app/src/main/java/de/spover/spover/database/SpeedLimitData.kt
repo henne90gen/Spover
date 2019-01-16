@@ -115,8 +115,8 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         private const val NAME = "spover"
 
-        fun createBuilder(context: Context): RoomDatabase.Builder<AppDatabase> {
-            return Room.databaseBuilder(context, AppDatabase::class.java, NAME)
+        fun getDatabase(context: Context): AppDatabase {
+            return Room.databaseBuilder(context, AppDatabase::class.java, NAME).fallbackToDestructiveMigration().build()
         }
     }
 

@@ -106,7 +106,7 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
     /** if a request with the given bounding box exists return all ways and nodes corresponding
      * to that request */
     private class ReadFromDBAsyncTask(var speedLimitService: SpeedLimitService, var boundingBox: BoundingBox) : AsyncTask<Void, Void, String>() {
-        val db = AppDatabase.createBuilder(speedLimitService.context).fallbackToDestructiveMigration().build()
+        val db = AppDatabase.getDatabase(speedLimitService.context)
         var request: Request? = null
         var wayMap: LinkedHashMap<Way, List<Node>> = linkedMapOf()
 
