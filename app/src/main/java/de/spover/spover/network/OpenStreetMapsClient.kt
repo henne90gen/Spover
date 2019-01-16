@@ -6,12 +6,14 @@ import android.app.job.JobScheduler
 import android.app.job.JobService
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.os.PersistableBundle
 import android.util.Log
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import de.spover.spover.BoundingBox
-import de.spover.spover.database.*
+import de.spover.spover.database.OsmPersistenceHelper
 import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -19,9 +21,13 @@ import java.io.UnsupportedEncodingException
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
+typealias CompletionCallback = () -> Unit
+
 class OpenStreetMapsClient : JobService() {
 
     companion object {
+        const val DOWNLOAD_COMPLETE_ACTION = "DownloadComplete"
+
         private const val BASE_URL = "https://overpass-api.de/api/"
         private val TAG = OpenStreetMapsClient::class.java.simpleName
         private const val JOB_ID = 1
@@ -90,6 +96,10 @@ class OpenStreetMapsClient : JobService() {
         val osm = xmlMapper.readValue<Osm>(downloadResult, Osm::class.java)
 
         OsmPersistenceHelper().persistOsmXmlResult(context, osm, boundingBox)
+
+        val intent = Intent(DOWNLOAD_COMPLETE_ACTION)
+        LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
+        Log.e(TAG, "Sent broadcast")
     }
 
     /**

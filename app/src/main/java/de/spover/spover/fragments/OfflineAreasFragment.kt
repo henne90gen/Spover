@@ -1,17 +1,21 @@
 package de.spover.spover.fragments
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import androidx.fragment.app.Fragment
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import de.spover.spover.MainActivity
 import de.spover.spover.R
 import de.spover.spover.database.AppDatabase
 import de.spover.spover.database.Request
 
 class OfflineAreasFragment : Fragment() {
+
+    companion object {
+        private val TAG = OfflineAreasFragment::class.simpleName
+    }
 
     private lateinit var requests: List<Request>
 
@@ -21,15 +25,40 @@ class OfflineAreasFragment : Fragment() {
     }
 
     private fun initUI(rootView: View): View {
-        val addOfflineAreaBtn = rootView.findViewById<FloatingActionButton>(R.id.btnAddOfflineArea)
+        val addOfflineAreaBtn = rootView.findViewById<Button>(R.id.btnAddOfflineArea)
         addOfflineAreaBtn.setOnClickListener(this::goToOfflineMap)
 
-        reloadAreaFragments(addOfflineAreaBtn)
+        val deleteFirstOfflineAreaBtn = rootView.findViewById<Button>(R.id.btnDeleteFirstOfflineArea)
+        deleteFirstOfflineAreaBtn.setOnClickListener {
+            deleteFirstOfflineArea(deleteFirstOfflineAreaBtn, addOfflineAreaBtn)
+        }
+
+        reloadAreaFragments(deleteFirstOfflineAreaBtn, addOfflineAreaBtn)
 
         return rootView
     }
 
-    private fun reloadAreaFragments(addOfflineAreaBtn: FloatingActionButton) {
+    private fun deleteFirstOfflineArea(deleteFirstOfflineAreaBtn: Button, addOfflineAreaBtn: Button) {
+        Log.e(TAG, "Deleting first Request")
+
+        deleteFirstOfflineAreaBtn.isEnabled = false
+
+        val thread = Thread {
+            val db = AppDatabase.getDatabase(context!!)
+            val request = db.requestDao().findRequestById(requests[0].id!!)
+            db.requestDao().delete(request)
+
+            Log.e(TAG, "Deleted Request with id=${requests[0].id}")
+
+            activity!!.runOnUiThread {
+                deleteFirstOfflineAreaBtn.isEnabled = requests.size > 1
+                reloadAreaFragments(deleteFirstOfflineAreaBtn, addOfflineAreaBtn)
+            }
+        }
+        thread.start()
+    }
+
+    private fun reloadAreaFragments(deleteFirstOfflineAreaBtn: Button, addOfflineAreaBtn: Button) {
         addOfflineAreaBtn.isEnabled = false
 
         // Remove all old data
@@ -55,6 +84,9 @@ class OfflineAreasFragment : Fragment() {
             transaction.commit()
 
             activity!!.runOnUiThread {
+                if (requests.isNotEmpty()) {
+                    deleteFirstOfflineAreaBtn.isEnabled = true
+                }
                 addOfflineAreaBtn.isEnabled = true
             }
         }
@@ -85,7 +117,7 @@ class OfflineAreasFragment : Fragment() {
         return bundle
     }
 
-    private fun goToOfflineMap(it: View) {
+    private fun goToOfflineMap(target: View) {
         val offlineMapFragment = OfflineMapFragment()
         offlineMapFragment.arguments = packToBundle(requests)
         val transaction = activity!!.supportFragmentManager.beginTransaction()

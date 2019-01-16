@@ -1,9 +1,16 @@
 package de.spover.spover.fragments
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.graphics.Point
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.RelativeLayout
 import androidx.fragment.app.Fragment
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -11,18 +18,73 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.PolygonOptions
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import de.spover.spover.BoundingBox
+import de.spover.spover.OverlayWithHole
 import de.spover.spover.R
+import de.spover.spover.network.OpenStreetMapsClient
+import java.util.*
 
 
 class OfflineMapFragment : Fragment(), OnMapReadyCallback {
 
+    private var currentPositionIndex = 0
+    private var googleMap: GoogleMap? = null
+    private var positions: List<LatLng> = Collections.emptyList()
+
+    private lateinit var overlay: OverlayWithHole
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val rootView = inflater.inflate(R.layout.offline_map, container, false)
+
+        val layout = rootView as RelativeLayout
+        overlay = OverlayWithHole(context!!)
+        val params = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT)
+        layout.addView(overlay, params)
 
         val mapFragment = childFragmentManager.findFragmentById(R.id.offlineMap) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
+        val btnNextArea = rootView.findViewById<FloatingActionButton>(R.id.btnNextArea)
+        btnNextArea.setOnClickListener {
+            moveToNextPosition()
+        }
+
+        val btnNewArea = rootView.findViewById<FloatingActionButton>(R.id.btnNewArea)
+        btnNewArea.setOnClickListener {
+            val topRight = Point(overlay.cutout.right.toInt(), overlay.cutout.top.toInt())
+            val topRightLocation = googleMap!!.projection.fromScreenLocation(topRight)
+
+            val bottomLeft = Point(overlay.cutout.left.toInt(), overlay.cutout.bottom.toInt())
+            val bottomLeftLocation = googleMap!!.projection.fromScreenLocation(bottomLeft)
+
+            val boundingBox = BoundingBox(
+                    bottomLeftLocation.latitude,
+                    bottomLeftLocation.longitude,
+                    topRightLocation.latitude,
+                    topRightLocation.longitude
+            )
+//            googleMap!!.addMarker(MarkerOptions().position(topLeftLocation))
+//            googleMap!!.addMarker(MarkerOptions().position(bottomRightLocation))
+
+            OpenStreetMapsClient.scheduleBoundingBoxFetching(context!!, boundingBox)
+        }
+
+        registerBroadcastReceiver()
+
         return rootView
+    }
+
+    private fun registerBroadcastReceiver() {
+        val receiver = object:BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                Log.e("Hello", "Receiving...")
+                if (intent != null && intent.action == OpenStreetMapsClient.DOWNLOAD_COMPLETE_ACTION) {
+                    activity!!.supportFragmentManager.popBackStack()
+                }
+            }
+        }
+        activity!!.registerReceiver(receiver, IntentFilter())
     }
 
     override fun onMapReady(googleMap: GoogleMap?) {
@@ -30,8 +92,12 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
             return
         }
 
-        var lastPosition = LatLng(-33.852, 151.211)
-        arguments!!.getStringArrayList("ids")?.forEach {
+        this.googleMap = googleMap
+
+        val ids = arguments!!.getStringArrayList("ids")
+                ?: Collections.emptyList<String>()
+
+        positions = ids.map {
             val minLon = arguments!!.getDouble("$it-minLon")
             val minLat = arguments!!.getDouble("$it-minLat")
             val maxLon = arguments!!.getDouble("$it-maxLon")
@@ -42,12 +108,27 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
                             LatLng(maxLat, maxLon),
                             LatLng(minLat, maxLon))
             googleMap.addPolygon(rectOptions)
-            lastPosition = LatLng(minLat, minLon)
+            val centerLon = (minLon + maxLon) / 2
+            val centerLat = (minLat + maxLat) / 2
+            LatLng(centerLat, centerLon)
         }
 
-        googleMap.moveCamera(CameraUpdateFactory.newLatLng(lastPosition))
+        moveToNextPosition()
 
         // This is how we can find the visible region
         // googleMap.projection.visibleRegion.latLngBounds.northeast
+    }
+
+    private fun moveToNextPosition() {
+        if (googleMap == null) {
+            return
+        }
+
+        googleMap?.apply {
+            moveCamera(CameraUpdateFactory.newLatLngZoom(positions[currentPositionIndex++], 12.0f))
+            if (currentPositionIndex >= positions.size) {
+                currentPositionIndex = 0
+            }
+        }
     }
 }
