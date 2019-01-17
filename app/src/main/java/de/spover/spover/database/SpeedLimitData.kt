@@ -85,7 +85,7 @@ interface RequestDao {
     fun insert(request: Request): Long
 
     @Delete
-    fun delete(request: Request)
+    fun delete(vararg requests: Request)
 
     @Query("SELECT * FROM request")
     fun findAllRequests(): List<Request>

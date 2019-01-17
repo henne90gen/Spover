@@ -85,6 +85,7 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
 //            googleMap!!.addMarker(MarkerOptions().position(bottomRightLocation))
 
         OpenStreetMapsClient.scheduleBoundingBoxFetching(context!!, boundingBox)
+        // FIXME show loading indicator and disable user interactions
     }
 
     private fun registerBroadcastReceiver() {
@@ -130,13 +131,14 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
         }
 
         moveToNextPosition()
-
-        // This is how we can find the visible region
-        // googleMap.projection.visibleRegion.latLngBounds.northeast
     }
 
     private fun moveToNextPosition() {
         if (googleMap == null) {
+            return
+        }
+
+        if (positions.isEmpty()) {
             return
         }
 

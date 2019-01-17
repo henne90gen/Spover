@@ -54,6 +54,9 @@ class OsmPersistenceHelper {
                 db.nodeDao().insert(node)
             }
         }
+
+        db.close()
+
         val endTime = System.currentTimeMillis()
         val diff = endTime - startTime
         Log.i(TAG, "Writing ways to database. Done. ($diff ms)")
