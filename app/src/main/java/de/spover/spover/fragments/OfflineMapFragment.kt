@@ -6,12 +6,12 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Point
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.RelativeLayout
 import androidx.fragment.app.Fragment
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -27,6 +27,8 @@ import java.util.*
 
 
 class OfflineMapFragment : Fragment(), OnMapReadyCallback {
+
+    private lateinit var broadcastReceiver: BroadcastReceiver
 
     private var currentPositionIndex = 0
     private var googleMap: GoogleMap? = null
@@ -52,22 +54,7 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
 
         val btnNewArea = rootView.findViewById<FloatingActionButton>(R.id.btnNewArea)
         btnNewArea.setOnClickListener {
-            val topRight = Point(overlay.cutout.right.toInt(), overlay.cutout.top.toInt())
-            val topRightLocation = googleMap!!.projection.fromScreenLocation(topRight)
-
-            val bottomLeft = Point(overlay.cutout.left.toInt(), overlay.cutout.bottom.toInt())
-            val bottomLeftLocation = googleMap!!.projection.fromScreenLocation(bottomLeft)
-
-            val boundingBox = BoundingBox(
-                    bottomLeftLocation.latitude,
-                    bottomLeftLocation.longitude,
-                    topRightLocation.latitude,
-                    topRightLocation.longitude
-            )
-//            googleMap!!.addMarker(MarkerOptions().position(topLeftLocation))
-//            googleMap!!.addMarker(MarkerOptions().position(bottomRightLocation))
-
-            OpenStreetMapsClient.scheduleBoundingBoxFetching(context!!, boundingBox)
+            startDownloadOfNewArea()
         }
 
         registerBroadcastReceiver()
@@ -75,17 +62,42 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
         return rootView
     }
 
-    // FIXME this does not work yet
+    override fun onDestroy() {
+        super.onDestroy()
+        val localBroadcastManager = LocalBroadcastManager.getInstance(activity!!)
+        localBroadcastManager.unregisterReceiver(broadcastReceiver)
+    }
+
+    private fun startDownloadOfNewArea() {
+        val topRight = Point(overlay.cutout.right.toInt(), overlay.cutout.top.toInt())
+        val topRightLocation = googleMap!!.projection.fromScreenLocation(topRight)
+
+        val bottomLeft = Point(overlay.cutout.left.toInt(), overlay.cutout.bottom.toInt())
+        val bottomLeftLocation = googleMap!!.projection.fromScreenLocation(bottomLeft)
+
+        val boundingBox = BoundingBox(
+                bottomLeftLocation.latitude,
+                bottomLeftLocation.longitude,
+                topRightLocation.latitude,
+                topRightLocation.longitude
+        )
+//            googleMap!!.addMarker(MarkerOptions().position(topLeftLocation))
+//            googleMap!!.addMarker(MarkerOptions().position(bottomRightLocation))
+
+        OpenStreetMapsClient.scheduleBoundingBoxFetching(context!!, boundingBox)
+    }
+
     private fun registerBroadcastReceiver() {
-        val receiver = object:BroadcastReceiver() {
+        broadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                Log.e("Hello", "Receiving...")
                 if (intent != null && intent.action == OpenStreetMapsClient.DOWNLOAD_COMPLETE_ACTION) {
                     activity!!.supportFragmentManager.popBackStack()
                 }
             }
         }
-        activity!!.registerReceiver(receiver, IntentFilter())
+        val localBroadcastManager = LocalBroadcastManager.getInstance(activity!!)
+        val intentFilter = IntentFilter(OpenStreetMapsClient.DOWNLOAD_COMPLETE_ACTION)
+        localBroadcastManager.registerReceiver(broadcastReceiver, intentFilter)
     }
 
     override fun onMapReady(googleMap: GoogleMap?) {
@@ -94,6 +106,9 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
         }
 
         this.googleMap = googleMap
+
+        // Disabling rotation, because OSM does not support rotated areas
+        googleMap.uiSettings.isRotateGesturesEnabled = false
 
         val ids = arguments!!.getStringArrayList("ids")
                 ?: Collections.emptyList<String>()

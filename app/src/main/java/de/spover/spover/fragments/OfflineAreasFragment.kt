@@ -26,7 +26,9 @@ class OfflineAreasFragment : Fragment() {
 
     private fun initUI(rootView: View): View {
         val addOfflineAreaBtn = rootView.findViewById<Button>(R.id.btnAddOfflineArea)
-        addOfflineAreaBtn.setOnClickListener(this::goToOfflineMap)
+        addOfflineAreaBtn.setOnClickListener {
+            goToOfflineMap()
+        }
 
         val deleteFirstOfflineAreaBtn = rootView.findViewById<Button>(R.id.btnDeleteFirstOfflineArea)
         deleteFirstOfflineAreaBtn.setOnClickListener {
@@ -75,12 +77,15 @@ class OfflineAreasFragment : Fragment() {
             val transaction = childFragmentManager.beginTransaction()
             val db = AppDatabase.getDatabase(context!!)
             requests = db.requestDao().findAllRequests()
-            // TODO use these bundles to pass the bounding boxes to offline map for display
-            requests.forEach {
-                val offlineAreaFragment = OfflineAreaFragment()
-                offlineAreaFragment.arguments = packToBundle(it)
-                transaction.add(R.id.offlineAreasContainer, offlineAreaFragment)
-            }
+
+            requests.sortedBy { it.creationTime }
+                    .reversed()
+                    .forEach {
+                        val offlineAreaFragment = OfflineAreaFragment()
+                        offlineAreaFragment.arguments = packToBundle(it)
+                        transaction.add(R.id.offlineAreasContainer, offlineAreaFragment)
+                    }
+
             transaction.commit()
 
             activity!!.runOnUiThread {
@@ -117,7 +122,7 @@ class OfflineAreasFragment : Fragment() {
         return bundle
     }
 
-    private fun goToOfflineMap(target: View) {
+    private fun goToOfflineMap() {
         val offlineMapFragment = OfflineMapFragment()
         offlineMapFragment.arguments = packToBundle(requests)
         val transaction = activity!!.supportFragmentManager.beginTransaction()

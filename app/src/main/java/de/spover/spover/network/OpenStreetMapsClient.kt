@@ -21,8 +21,6 @@ import java.io.UnsupportedEncodingException
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
-typealias CompletionCallback = () -> Unit
-
 class OpenStreetMapsClient : JobService() {
 
     companion object {
@@ -75,7 +73,7 @@ class OpenStreetMapsClient : JobService() {
         }
         val boundingBox = convert(params.extras)
         val thread = Thread {
-            run(this, boundingBox)
+            run(boundingBox)
         }
         thread.start()
         return false
@@ -90,17 +88,19 @@ class OpenStreetMapsClient : JobService() {
         return URL("${BASE_URL}xapi?*[maxspeed=*][bbox=${boundingBox.minLon},${boundingBox.minLat},${boundingBox.maxLon},${boundingBox.maxLat}]")
     }
 
-    private fun run(context: Context, boundingBox: BoundingBox) {
+    private fun run(boundingBox: BoundingBox) {
         val url = createUrl(boundingBox)
         val downloadResult = download(url)
         val osm = xmlMapper.readValue<Osm>(downloadResult, Osm::class.java)
 
-        OsmPersistenceHelper().persistOsmXmlResult(context, osm, boundingBox)
+        OsmPersistenceHelper().persistOsmXmlResult(this, osm, boundingBox)
 
-        // FIXME this does not work yet
         val intent = Intent(DOWNLOAD_COMPLETE_ACTION)
-        LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
-        Log.e(TAG, "Sent broadcast")
+        val localBroadcastManager = LocalBroadcastManager.getInstance(this)
+        val success = localBroadcastManager.sendBroadcast(intent)
+        if (!success) {
+            Log.w(TAG, "Could not send broadcast about completed download")
+        }
     }
 
     /**
