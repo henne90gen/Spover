@@ -56,6 +56,7 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
         val intentFilter = IntentFilter()
         intentFilter.addAction(OpenStreetMapsClient.AUTO_DOWNLOAD_COMPLETE_ACTION)
         intentFilter.addAction(OpenStreetMapsClient.MANUAL_DOWNLOAD_COMPLETE_ACTION)
+        intentFilter.addAction(OpenStreetMapsClient.DOWNLOAD_FAILED_ACTION)
         localBroadcastManager.registerReceiver(this, intentFilter)
     }
 
