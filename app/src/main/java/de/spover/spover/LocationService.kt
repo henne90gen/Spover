@@ -27,10 +27,6 @@ class LocationService(var context: Context, private val speedCallback: SpeedCall
 
     private val speedList = ArrayList<Double>()
 
-    var boundingBox = BoundingBox(0.0, 0.0, 0.0, 0.0)
-    private var newBoundingBoxDistFromLocation = 1000
-    private var minBoundingBoxDistFromEdge = 200
-
     init {
         if (ContextCompat.checkSelfPermission(context,
                         Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
