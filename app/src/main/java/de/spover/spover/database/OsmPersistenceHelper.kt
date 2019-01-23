@@ -15,7 +15,7 @@ class OsmPersistenceHelper {
     fun persistOsmXmlResult(context: Context, osm: Osm, boundingBox: BoundingBox) {
         val startTime = System.currentTimeMillis()
         Log.i(TAG, "Writing ways to database.")
-        Log.i(TAG, "Found ${osm.nodes.size} nodes and ${osm.ways.size} ways")
+        Log.i(TAG, "Found ${osm.nodes?.size} nodes and ${osm.ways?.size} ways")
 
         val db = AppDatabase.getDatabase(context)
 
@@ -28,14 +28,17 @@ class OsmPersistenceHelper {
         )
         request.id = db.requestDao().insert(request)
 
-        val nodes = osm.nodes.map {
-            val latitude = it.lat.toDouble()
-            val longitude = it.lon.toDouble()
-            val osmIdentifier = it.id
-            osmIdentifier to Node(-1, latitude, longitude, osmIdentifier)
-        }.toMap()
+        var nodes = mapOf<String, Node>()
+        if (osm.nodes != null) {
+            nodes = osm.nodes.map {
+                val latitude = it.lat.toDouble()
+                val longitude = it.lon.toDouble()
+                val osmIdentifier = it.id
+                osmIdentifier to Node(-1, latitude, longitude, osmIdentifier)
+            }.toMap()
+        }
 
-        osm.ways.forEach {
+        osm.ways?.forEach {
             var maxSpeed = ""
             var maxSpeedSource = ""
             var maxSpeedConditional = ""

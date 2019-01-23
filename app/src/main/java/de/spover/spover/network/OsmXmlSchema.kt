@@ -8,13 +8,14 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JacksonXmlRootElement(localName = "osm")
 data class Osm(
+        // should be optional
         @JacksonXmlProperty(localName = "node", isAttribute = false)
         @JacksonXmlElementWrapper(useWrapping = false)
-        val nodes: List<OsmNode>,
+        val nodes: List<OsmNode>?,
 
         @JacksonXmlProperty(localName = "way", isAttribute = false)
         @JacksonXmlElementWrapper(useWrapping = false)
-        val ways: List<OsmWay>
+        val ways: List<OsmWay>?
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
