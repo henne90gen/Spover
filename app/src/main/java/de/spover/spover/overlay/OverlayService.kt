@@ -54,7 +54,7 @@ class OverlayService : Service(), View.OnTouchListener {
         settingsStore = SettingsStore(this)
 
         speedLimitService = SpeedLimitService(this, this::setSpeedLimit, this::adaptUIToChangedEnvironment)
-        locationService = LocationService(this, this::updateSpeed, speedLimitService::updateCurrentLocation, speedLimitService::updateBoundingBox)
+        locationService = LocationService(this, this::updateSpeed, speedLimitService::updateCurrentLocation)
 
         lightService = LightService(this, this::adaptUIToChangedEnvironment)
 

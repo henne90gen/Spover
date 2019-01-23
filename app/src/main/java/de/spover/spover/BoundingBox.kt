@@ -51,10 +51,20 @@ class BoundingBox(
         return "minLat: $minLat, minLon: $minLon, maxLat: $maxLat, maxLon: $maxLon"
     }
 
-    fun compareTo(boundingBox: BoundingBox): Boolean {
-        return minLat == boundingBox.minLat
-                && minLon == boundingBox.minLon
-                && maxLat == boundingBox.maxLat
-                && maxLon == boundingBox.maxLon
+    override fun equals(other: Any?): Boolean {
+        if (other == null) {
+            return false
+        }
+        if (other !is BoundingBox) {
+            return false
+        }
+        return minLat == other.minLat
+                && minLon == other.minLon
+                && maxLat == other.maxLat
+                && maxLon == other.maxLon
+    }
+
+    fun contains(location: Location): Boolean {
+        return isBoundingBoxValid(location, 0)
     }
 }

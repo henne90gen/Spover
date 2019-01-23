@@ -13,9 +13,8 @@ import de.spover.spover.network.OpenStreetMapsClient
 
 typealias SpeedCallback = (Double) -> Unit
 typealias LocationCallback = (Location) -> Unit
-typealias BoundingBoxCallback = (BoundingBox) -> Unit
 
-class LocationService(var context: Context, val speedCallback: SpeedCallback?, val locationCallback: LocationCallback?, val bBoxCallback: BoundingBoxCallback?) : LocationListener {
+class LocationService(var context: Context, private val speedCallback: SpeedCallback?, private val locationCallback: LocationCallback?) : LocationListener {
     companion object {
         private val TAG = LocationService::class.java.simpleName
         private const val SPEED_THRESHOLD = 1 / 3.6
@@ -60,23 +59,9 @@ class LocationService(var context: Context, val speedCallback: SpeedCallback?, v
             speedCallback?.invoke(speed)
         }
 
-        if (!boundingBox.isBoundingBoxValid(location, minBoundingBoxDistFromEdge)) {
-            boundingBox = BoundingBox.createBoundingBox(location, newBoundingBoxDistFromLocation )
-            fetchNewData(boundingBox)
-            bBoxCallback?.invoke(boundingBox)
-        }
-
         lastLocation = location
         lastLocUpdateTime = currentTime
         locationCallback?.invoke(location)
-    }
-
-    private fun fetchNewData(boundingBox: BoundingBox) {
-        Log.d(TAG, "started new request for $boundingBox")
-        OpenStreetMapsClient.scheduleBoundingBoxFetching(
-                context,
-                boundingBox
-        )
     }
 
     fun unregisterLocationUpdates() {

@@ -12,7 +12,7 @@ class SpeedLimitExtractor {
     companion object {
         private var TAG = SpeedLimitExtractor::class.java.simpleName
 
-        fun getClosestWay(location: Location, lastLocation: Location, wayMap: LinkedHashMap<Way, List<Node>>): Way? {
+        fun findClosestWay(location: Location, lastLocation: Location, wayMap: LinkedHashMap<Way, List<Node>>): Way? {
             if (wayMap.size == 0) return null
 
             var minDistance = Float.POSITIVE_INFINITY
@@ -35,18 +35,19 @@ class SpeedLimitExtractor {
 
             // if the closest way is to far away we don't accept it
             if (minDistance / 2 > 80) {
-                Log.e(TAG, "Closest way is to far away ${minDistance / 2}m")
+                Log.e(TAG, "Closest way is too far away ${minDistance / 2}m")
                 result = null
+            } else {
+                Log.i(TAG, "Closest way is around ${minDistance / 2}m away and has a speed limit of ${extractSpeedLimit(result)}km/h")
             }
 
-            Log.d(TAG, "nearest way is around ${minDistance / 2}m away and has a speed limit of ${extractSpeedLimit(result)}km/h")
             return result
         }
 
         fun extractSpeedLimit(way: Way?): Pair<Int, String> {
             return when (way) {
                 null -> {
-                    Log.e(TAG, "current way is undefined, no speed limit available")
+                    Log.e(TAG, "Current way is undefined, no speed limit available")
                     Pair(Int.MAX_VALUE, "--")
                 }
                 else -> {
