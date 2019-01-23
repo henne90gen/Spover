@@ -93,7 +93,7 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
         speedMode = when {
             currentSpeedLimit.first + threshold < 0
                     || currentSpeed <= currentSpeedLimit.first + (threshold/2) -> SpeedMode.GREEN
-            currentSpeed < currentSpeedLimit.first + threshold -> SpeedMode.YELLOW
+            currentSpeed <= currentSpeedLimit.first + threshold -> SpeedMode.YELLOW
             currentSpeed > currentSpeedLimit.first + threshold -> SpeedMode.RED
             else -> {
                 Log.e(TAG, "Unknown speed mode for speed: $currentSpeed and speed limit: $currentSpeedLimit")
