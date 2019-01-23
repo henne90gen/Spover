@@ -38,7 +38,7 @@ class SpeedLimitExtractor {
                 Log.e(TAG, "Closest way is too far away ${minDistance / 2}m")
                 result = null
             } else {
-                Log.i(TAG, "Closest way is around ${minDistance / 2}m away and has a speed limit of ${extractSpeedLimit(result)}km/h")
+                Log.d(TAG, "Closest way is around ${minDistance / 2}m away and has a speed limit of ${extractSpeedLimit(result)}km/h")
             }
 
             return result

@@ -15,15 +15,11 @@ class MainActivity : AppCompatActivity() {
         private var TAG = MainActivity::class.java.simpleName
     }
 
-    private lateinit var permissions: PermissionManager
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         initSettingsFragment(savedInstanceState)
-
-        permissions = PermissionManager(this)
     }
 
     private fun initSettingsFragment(savedInstanceState: Bundle?) {

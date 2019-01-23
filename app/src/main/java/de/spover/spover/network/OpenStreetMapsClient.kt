@@ -27,6 +27,7 @@ class OpenStreetMapsClient : JobService() {
     companion object {
         const val AUTO_DOWNLOAD_COMPLETE_ACTION = "AutoDownloadComplete"
         const val MANUAL_DOWNLOAD_COMPLETE_ACTION = "ManualDownloadComplete"
+        const val DOWNLOAD_FAILED_ACTION = "DownloadFailed"
         const val IS_STARTED_MANUALLY = "IsStartedManually"
 
         private const val BASE_URL = "https://overpass-api.de/api/"
@@ -80,6 +81,10 @@ class OpenStreetMapsClient : JobService() {
 
         fun convert(boundingBox: BoundingBox): Bundle {
             val bundle = Bundle()
+            bundle.putDouble("minLat", boundingBox.minLat)
+            bundle.putDouble("minLon", boundingBox.minLon)
+            bundle.putDouble("maxLat", boundingBox.maxLat)
+            bundle.putDouble("maxLon", boundingBox.maxLon)
             return bundle
         }
     }
@@ -110,11 +115,21 @@ class OpenStreetMapsClient : JobService() {
     private fun run(boundingBox: BoundingBox, isStartedManually: Boolean) {
         Log.i(TAG, "Started download for $boundingBox")
 
-        val url = createUrl(boundingBox)
-        val downloadResult = download(url)
-        val osm = xmlMapper.readValue<Osm>(downloadResult, Osm::class.java)
+        try {
+            val url = createUrl(boundingBox)
+            val downloadResult = download(url)
+            val osm = xmlMapper.readValue<Osm>(downloadResult, Osm::class.java)
 
-        OsmPersistenceHelper().persistOsmXmlResult(this, osm, boundingBox)
+            OsmPersistenceHelper().persistOsmXmlResult(this, osm, boundingBox)
+        } catch (e: Exception){
+            val intent = Intent(DOWNLOAD_FAILED_ACTION)
+            val localBroadcastManager = LocalBroadcastManager.getInstance(this)
+            val success = localBroadcastManager.sendBroadcast(intent)
+            if (!success) {
+                Log.w(TAG, "Could not send broadcast about completed download")
+            }
+            return
+        }
 
         var action = AUTO_DOWNLOAD_COMPLETE_ACTION
         if (isStartedManually) {
