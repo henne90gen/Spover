@@ -17,7 +17,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="end|bottom"
-        android:clickable="true" />
+        android:clickable="true"
+        android:src="@drawable/ic_arrow_right"/>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/btnNewArea"
@@ -26,6 +27,7 @@
         android:layout_gravity="end|bottom"
         android:layout_marginLeft="200dp"
         android:layout_marginTop="200dp"
-        android:clickable="true" />
+        android:clickable="true"
+        android:src="@drawable/ic_arrow_down" />
 
 </RelativeLayout>

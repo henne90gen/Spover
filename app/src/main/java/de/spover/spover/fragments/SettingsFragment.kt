@@ -122,7 +122,9 @@ class SettingsFragment : Fragment() {
         switch.isChecked = settings.get(setting)
         switch.setOnCheckedChangeListener { _, isChecked ->
             settings.set(setting, isChecked)
-            overlayHelper.restartOverlayService()
+            if (overlayHelper.isOverlayServiceRunning()) {
+                overlayHelper.restartOverlayService()
+            }
         }
         return switch
     }

@@ -2,7 +2,6 @@ package de.spover.spover
 
 import android.location.Location
 import androidx.test.runner.AndroidJUnit4
-import de.spover.spover.network.BoundingBox
 import junit.framework.Assert.assertFalse
 import junit.framework.Assert.assertTrue
 import org.junit.Before
