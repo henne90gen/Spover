@@ -86,7 +86,7 @@ class SpeedLimitExtractor {
 
         private fun getSpecialTagSpeedLimit(way: Way): Pair<Int, String>? {
             var result: Pair<Int, String>? = null
-            val maxSpeedTags: HashMap<String, Pair<Int, String>> = hashMapOf("none" to Pair(Int.MAX_VALUE, "inf"), "walk" to Pair(5, "walk"))
+            val maxSpeedTags: HashMap<String, Pair<Int, String>> = hashMapOf("none" to Pair(Int.MAX_VALUE, "∞"), "walk" to Pair(5, "\uD83D\uDEB6"))
             if (way.maxSpeed in maxSpeedTags) {
                 result = maxSpeedTags[way.maxSpeed]!!
             }

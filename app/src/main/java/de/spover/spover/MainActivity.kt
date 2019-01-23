@@ -13,9 +13,6 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private var TAG = MainActivity::class.java.simpleName
-        const val OVERLAY_PERMISSION_REQUEST = 0
-        const val LOCATION_PERMISSION_REQUEST = 1
-        const val NOTIFICATION_PERMISSION_REQUEST = 2
     }
 
     private lateinit var permissions: PermissionManager
@@ -56,21 +53,5 @@ class MainActivity : AppCompatActivity() {
         val settingsFragmentTag = "settingsFragmentTag"
         transaction.add(R.id.fragmentContainer, settingsFragment, settingsFragmentTag)
         transaction.commit()
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        // double check in case the user hasn't given the permission in the settings activity
-        if (requestCode == OVERLAY_PERMISSION_REQUEST) {
-            overlayPermissionSwitch.isChecked = permissions.canDrawOverlays()
-        } else if (requestCode == NOTIFICATION_PERMISSION_REQUEST) {
-            notificationPermissionSwitch.isChecked = permissions.canReadNotifications()
-        }
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        if (requestCode == LOCATION_PERMISSION_REQUEST) {
-            locationPermissionSwitch.isChecked =
-                    (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)
-        }
     }
 }

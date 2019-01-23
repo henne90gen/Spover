@@ -2,6 +2,7 @@ package de.spover.spover.fragments
 
 import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
@@ -28,6 +29,9 @@ class SettingsFragment : Fragment() {
 
     companion object {
         private var TAG = SettingsFragment::class.java.simpleName
+        const val OVERLAY_PERMISSION_REQUEST = 0
+        const val LOCATION_PERMISSION_REQUEST = 1
+        const val NOTIFICATION_PERMISSION_REQUEST = 2
     }
 
     private lateinit var settings: SettingsStore
@@ -127,8 +131,7 @@ class SettingsFragment : Fragment() {
         if (!permissions.canAccessLocation() && isChecked) {
             Log.e(TAG, "Did not grant location permission")
             locationPermissionSwitch.isChecked = false
-            ActivityCompat.requestPermissions(activity!!,
-                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), MainActivity.LOCATION_PERMISSION_REQUEST)
+            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST)
         } else if (permissions.canAccessLocation() && !isChecked) {
             // ToDo maybe it's possible to open the specific settings activity with an intent
             Toast.makeText(context, getString(R.string.toast_remove_location_access), Toast.LENGTH_LONG).show()
@@ -138,14 +141,30 @@ class SettingsFragment : Fragment() {
 
     private fun checkNotificationPermission(isChecked: Boolean) {
         if (permissions.canReadNotifications().xor(isChecked)) {
-            startActivityForResult(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS), MainActivity.NOTIFICATION_PERMISSION_REQUEST)
+            startActivityForResult(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS), NOTIFICATION_PERMISSION_REQUEST)
         }
     }
 
     private fun checkDrawOverlayPermission(isChecked: Boolean) {
         if (permissions.canDrawOverlays().xor(isChecked)) {
             val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context!!.packageName}"))
-            startActivityForResult(intent, MainActivity.OVERLAY_PERMISSION_REQUEST)
+            startActivityForResult(intent, OVERLAY_PERMISSION_REQUEST)
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        // double check in case the user hasn't given the permission in the settings activity
+        if (requestCode == OVERLAY_PERMISSION_REQUEST) {
+            overlayPermissionSwitch.isChecked = permissions.canDrawOverlays()
+        } else if (requestCode == NOTIFICATION_PERMISSION_REQUEST) {
+            notificationPermissionSwitch.isChecked = permissions.canReadNotifications()
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if (requestCode == LOCATION_PERMISSION_REQUEST) {
+            locationPermissionSwitch.isChecked =
+                    (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)
         }
     }
 }
