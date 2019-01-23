@@ -20,7 +20,7 @@ class SpeedLimitExtractor {
             val nodeLocation = Location("")
 
             for ((way: Way, nodes: List<Node>) in wayMap) {
-                var lastNodeLastLocDistance = Float.POSITIVE_INFINITY
+                var lastNodeLastLocDistance = 10000000.0f
                 for (node: Node in nodes) {
                     nodeLocation.latitude = node.latitude
                     nodeLocation.longitude = node.longitude

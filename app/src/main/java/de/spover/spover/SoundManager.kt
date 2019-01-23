@@ -22,7 +22,7 @@ object SoundManager {
     }
 
     fun loadSound(context: Context) {
-        warningSound = soundPool.load(context, R.raw.please_slow_down, 1)
+        warningSound = soundPool.load(context, R.raw.beep, 1)
     }
 
     fun play() {
