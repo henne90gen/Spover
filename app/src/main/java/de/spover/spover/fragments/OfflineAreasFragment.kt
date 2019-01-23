@@ -59,9 +59,18 @@ class OfflineAreasFragment : Fragment() {
         val thread = Thread {
             val db = AppDatabase.getDatabase(context!!)
 
-            db.requestDao().delete(*selectedRequestIds.toTypedArray())
             selectedRequestIds.forEach {
-                Log.w(TAG, "Deleted request with id=${it.id}")
+                val ways = db.wayDao().findWaysByRequestId(it.id!!)
+                ways.forEach { way ->
+                    val nodes = db.nodeDao().findNodesByWayId(way.id!!)
+                    db.nodeDao().delete(*nodes.toTypedArray())
+                    Log.i(TAG, "Deleted ${nodes.size} nodes")
+                }
+                db.wayDao().delete(*ways.toTypedArray())
+                Log.i(TAG, "Deleted ${ways.size} ways")
+
+                db.requestDao().delete(it)
+                Log.i(TAG, "Deleted request with id=${it.id}")
             }
             selectedRequestIds.clear()
 
@@ -91,6 +100,8 @@ class OfflineAreasFragment : Fragment() {
                 requests.forEach(this::createOfflineArea)
                 addOfflineAreaBtn.isEnabled = true
             }
+
+            db.close()
         }
         thread.start()
     }

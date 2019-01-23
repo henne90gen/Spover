@@ -40,8 +40,8 @@ open class FindSpeedLimitTest {
         location.latitude = 13.75487
         location.longitude = 51.02706
 
-        assertEquals(Pair(42, "42"), SpeedLimitExtractor.extractSpeedLimit(SpeedLimitExtractor.getClosestWay(location, lastLocation, wayMap)))
-        assertEquals(Pair(24, "24"), SpeedLimitExtractor.extractSpeedLimit(SpeedLimitExtractor.getClosestWay(lastLocation, location, wayMap)))
+        assertEquals(Pair(42, "42"), SpeedLimitExtractor.extractSpeedLimit(SpeedLimitExtractor.findClosestWay(location, lastLocation, wayMap)))
+        assertEquals(Pair(24, "24"), SpeedLimitExtractor.extractSpeedLimit(SpeedLimitExtractor.findClosestWay(lastLocation, location, wayMap)))
     }
 
     @Test
@@ -52,6 +52,6 @@ open class FindSpeedLimitTest {
         location.latitude = 13.7797
         location.longitude = 51.0210
 
-        assertEquals(null, SpeedLimitExtractor.getClosestWay(location, lastLocation, wayMap))
+        assertEquals(null, SpeedLimitExtractor.findClosestWay(location, lastLocation, wayMap))
     }
 }

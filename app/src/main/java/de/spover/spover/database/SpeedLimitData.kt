@@ -3,6 +3,7 @@ package de.spover.spover.database
 import android.content.Context
 import androidx.room.*
 import androidx.room.ForeignKey.CASCADE
+import de.spover.spover.BoundingBox
 import java.time.Instant
 import java.time.LocalDateTime
 import java.util.*
@@ -44,7 +45,11 @@ data class Request(
 
         @PrimaryKey(autoGenerate = true)
         var id: Long? = null
-)
+) {
+    fun boundingBox(): BoundingBox {
+        return BoundingBox(minLat, minLon, maxLat, maxLon)
+    }
+}
 
 @Dao
 interface NodeDao {
@@ -54,6 +59,9 @@ interface NodeDao {
 
     @Insert
     fun insertAll(nodes: List<Node>)
+
+    @Delete
+    fun delete(vararg nodes: Node)
 
     @Update
     fun update(node: Node)
@@ -69,7 +77,7 @@ interface WayDao {
     fun insert(way: Way): Long
 
     @Delete
-    fun delete(way: Way)
+    fun delete(vararg ways: Way)
 
     @Query("SELECT * FROM way")
     fun findAllWays(): List<Way>

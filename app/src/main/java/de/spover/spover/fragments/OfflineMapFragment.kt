@@ -84,20 +84,23 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
 //            googleMap!!.addMarker(MarkerOptions().position(topLeftLocation))
 //            googleMap!!.addMarker(MarkerOptions().position(bottomRightLocation))
 
-        OpenStreetMapsClient.scheduleBoundingBoxFetching(context!!, boundingBox)
+        OpenStreetMapsClient.scheduleBoundingBoxFetching(context!!, boundingBox, isStartedManually = true)
         // FIXME show loading indicator and disable user interactions
     }
 
     private fun registerBroadcastReceiver() {
         broadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                if (intent != null && intent.action == OpenStreetMapsClient.DOWNLOAD_COMPLETE_ACTION) {
-                    activity!!.supportFragmentManager.popBackStack()
+                if (intent == null || intent.action != OpenStreetMapsClient.MANUAL_DOWNLOAD_COMPLETE_ACTION) {
+                    return
                 }
+
+                // We are done downloading, which means that we need to return to the previous view
+                activity!!.supportFragmentManager.popBackStack()
             }
         }
         val localBroadcastManager = LocalBroadcastManager.getInstance(activity!!)
-        val intentFilter = IntentFilter(OpenStreetMapsClient.DOWNLOAD_COMPLETE_ACTION)
+        val intentFilter = IntentFilter(OpenStreetMapsClient.MANUAL_DOWNLOAD_COMPLETE_ACTION)
         localBroadcastManager.registerReceiver(broadcastReceiver, intentFilter)
     }
 

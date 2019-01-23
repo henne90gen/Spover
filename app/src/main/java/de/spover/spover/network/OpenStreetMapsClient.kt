@@ -24,7 +24,9 @@ import javax.net.ssl.HttpsURLConnection
 class OpenStreetMapsClient : JobService() {
 
     companion object {
-        const val DOWNLOAD_COMPLETE_ACTION = "DownloadComplete"
+        const val AUTO_DOWNLOAD_COMPLETE_ACTION = "AutoDownloadComplete"
+        const val MANUAL_DOWNLOAD_COMPLETE_ACTION = "ManualDownloadComplete"
+        const val IS_STARTED_MANUALLY = "IsStartedManually"
 
         private const val BASE_URL = "https://overpass-api.de/api/"
         private val TAG = OpenStreetMapsClient::class.java.simpleName
@@ -32,7 +34,7 @@ class OpenStreetMapsClient : JobService() {
 
         private val xmlMapper = XmlMapper().registerKotlinModule()
 
-        fun scheduleBoundingBoxFetching(context: Context, boundingBox: BoundingBox) {
+        fun scheduleBoundingBoxFetching(context: Context, boundingBox: BoundingBox, isStartedManually: Boolean = false) {
             val jobScheduler = context
                     .getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
 
@@ -40,6 +42,8 @@ class OpenStreetMapsClient : JobService() {
                     OpenStreetMapsClient::class.java)
 
             val bundle = convert(boundingBox)
+            bundle.putBoolean(IS_STARTED_MANUALLY, isStartedManually)
+
             val jobInfo = JobInfo.Builder(OpenStreetMapsClient.JOB_ID, componentName)
                     .setExtras(bundle)
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
@@ -72,8 +76,9 @@ class OpenStreetMapsClient : JobService() {
             return false
         }
         val boundingBox = convert(params.extras)
+        val isStartedManually = params.extras[IS_STARTED_MANUALLY] as Boolean
         val thread = Thread {
-            run(boundingBox)
+            run(boundingBox, isStartedManually)
         }
         thread.start()
         return false
@@ -88,14 +93,18 @@ class OpenStreetMapsClient : JobService() {
         return URL("${BASE_URL}xapi?*[maxspeed=*][bbox=${boundingBox.minLon},${boundingBox.minLat},${boundingBox.maxLon},${boundingBox.maxLat}]")
     }
 
-    private fun run(boundingBox: BoundingBox) {
+    private fun run(boundingBox: BoundingBox, isStartedManually: Boolean) {
         val url = createUrl(boundingBox)
         val downloadResult = download(url)
         val osm = xmlMapper.readValue<Osm>(downloadResult, Osm::class.java)
 
         OsmPersistenceHelper().persistOsmXmlResult(this, osm, boundingBox)
 
-        val intent = Intent(DOWNLOAD_COMPLETE_ACTION)
+        var action = AUTO_DOWNLOAD_COMPLETE_ACTION
+        if (isStartedManually) {
+            action = MANUAL_DOWNLOAD_COMPLETE_ACTION
+        }
+        val intent = Intent(action)
         val localBroadcastManager = LocalBroadcastManager.getInstance(this)
         val success = localBroadcastManager.sendBroadcast(intent)
         if (!success) {
@@ -139,7 +148,6 @@ class OpenStreetMapsClient : JobService() {
             // Close Stream and disconnect HTTPS connection.
             connection?.inputStream?.close()
             connection?.disconnect()
-
         }
     }
 
