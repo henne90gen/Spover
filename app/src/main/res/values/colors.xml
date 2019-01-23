@@ -6,4 +6,6 @@
 
     <color name="colorText">#454545</color>
     <color name="colorTextLight">#dddddd</color>
+
+    <color name="white">#ffffff</color>
 </resources>

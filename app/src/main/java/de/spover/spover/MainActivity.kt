@@ -17,10 +17,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var permissions: PermissionManager
 
-    private lateinit var locationPermissionSwitch: Switch
-    private lateinit var overlayPermissionSwitch: Switch
-    private lateinit var notificationPermissionSwitch: Switch
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)

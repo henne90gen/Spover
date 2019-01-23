@@ -59,7 +59,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:minHeight="80dp"
-                    android:text="@string/show_overlay" />
+                    android:text="@string/show_overlay"
+                    android:backgroundTint="@color/colorPrimary"
+                    android:textSize="16sp"
+                    android:textColor="@color/white"/>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
@@ -145,6 +148,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:minHeight="80dp"
+                    android:backgroundTint="@color/colorPrimary"
+                    android:textSize="16sp"
+                    android:textColor="@color/white"
                     android:text="@string/select_offline_map" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
