@@ -80,6 +80,10 @@ class OpenStreetMapsClient : JobService() {
 
         fun convert(boundingBox: BoundingBox): Bundle {
             val bundle = Bundle()
+            bundle.putDouble("minLat", boundingBox.minLat)
+            bundle.putDouble("minLon", boundingBox.minLon)
+            bundle.putDouble("maxLat", boundingBox.maxLat)
+            bundle.putDouble("maxLon", boundingBox.maxLon)
             return bundle
         }
     }

@@ -14,6 +14,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import de.spover.spover.BoundingBox
 import de.spover.spover.database.*
 import de.spover.spover.network.OpenStreetMapsClient
+import java.util.concurrent.atomic.AtomicBoolean
 
 enum class SpeedMode {
     GREEN,
@@ -47,12 +48,14 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
     private var availableBoundingBoxes: MutableList<BoundingBox> = ArrayList()
 
     private var boundingBox: BoundingBox = BoundingBox(0.0, 0.0, 0.0, 0.0)
-    private var downloading: Boolean = false
-    private var updatingSpeedData: Boolean = false
+    private var downloading: AtomicBoolean = AtomicBoolean(false)
+    private var updatingSpeedData: AtomicBoolean = AtomicBoolean(false)
 
     init {
         val localBroadcastManager = LocalBroadcastManager.getInstance(context)
         val intentFilter = IntentFilter()
+        intentFilter.addAction(OpenStreetMapsClient.AUTO_DOWNLOAD_COMPLETE_ACTION)
+        intentFilter.addAction(OpenStreetMapsClient.MANUAL_DOWNLOAD_COMPLETE_ACTION)
         localBroadcastManager.registerReceiver(this, intentFilter)
     }
 
@@ -62,27 +65,28 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
         }
 
         if (intent.action == OpenStreetMapsClient.AUTO_DOWNLOAD_COMPLETE_ACTION) {
-            downloading = false
+            downloading.set(false)
 
-            currentLocation?.let {
-                if (isLocationOutsideCurrentBoundingBox(it)) {
-                    loadSpeedDataFromLocalDatabase(it)
+            if (currentLocation != null) {
+                if (isLocationOutsideCurrentBoundingBox(currentLocation!!)) {
+                    loadSpeedDataFromLocalDatabase(currentLocation!!)
                 }
             }
-        } else if (intent.action == OpenStreetMapsClient.MANUAL_DOWNLOAD_COMPLETE_ACTION) {
+        }
+        if (intent.action == OpenStreetMapsClient.AUTO_DOWNLOAD_COMPLETE_ACTION || intent.action == OpenStreetMapsClient.MANUAL_DOWNLOAD_COMPLETE_ACTION) {
             val downloadedBoundingBox = OpenStreetMapsClient.convert(intent.extras!!)
             availableBoundingBoxes.add(downloadedBoundingBox)
         }
     }
 
     private fun loadSpeedDataFromLocalDatabase(location: Location) {
-        updatingSpeedData = true
+        updatingSpeedData.set(true)
         ReadFromDBAsyncTask(this, location).execute()
     }
 
     private fun updateCurrentSpeedData(request: Request?, wayMap: LinkedHashMap<Way, List<Node>>) {
         this.wayMap = wayMap
-        updatingSpeedData = false
+        updatingSpeedData.set(false)
         if (request == null) {
             currentLocation?.let {
                 downloadNewArea(it, NEW_BB_DIST_FROM_LOCATION)
@@ -99,6 +103,10 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
             return
         }
 
+        if (updatingSpeedData.get()) {
+            return
+        }
+
         // when our current data doesn't correspond to the current bounding box
         // try reading data for the new bounding box from db with each location update
         if (isLocationOutsideCurrentBoundingBox(location)) {
@@ -106,8 +114,8 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
             return
         }
 
-        if (!downloading
-                && !updatingSpeedData
+        if (!downloading.get()
+                && !updatingSpeedData.get()
                 && !boundingBox.isBoundingBoxValid(location, MIN_BB_DIST_FROM_EDGE)
                 && hasNoMoreValidBoundingBoxes(location)) {
             downloadNewArea(location, NEW_BB_DIST_FROM_LOCATION)
@@ -129,11 +137,11 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
     }
 
     private fun downloadNewArea(location: Location, newBoundingBoxDistFromLocation: Int) {
-        if (downloading || updatingSpeedData) {
+        if (downloading.get() || updatingSpeedData.get()) {
             return
         }
+        downloading.set(true)
         val newBoundingBox = BoundingBox.createBoundingBox(location, newBoundingBoxDistFromLocation)
-        downloading = true
         OpenStreetMapsClient.scheduleBoundingBoxFetching(
                 context,
                 newBoundingBox
