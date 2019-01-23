@@ -7,6 +7,7 @@ import android.app.job.JobService
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Bundle
 import android.os.PersistableBundle
 import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -41,7 +42,7 @@ class OpenStreetMapsClient : JobService() {
             val componentName = ComponentName(context,
                     OpenStreetMapsClient::class.java)
 
-            val bundle = convert(boundingBox)
+            val bundle = convertPersistable(boundingBox)
             bundle.putBoolean(IS_STARTED_MANUALLY, isStartedManually)
 
             val jobInfo = JobInfo.Builder(OpenStreetMapsClient.JOB_ID, componentName)
@@ -51,7 +52,7 @@ class OpenStreetMapsClient : JobService() {
             jobScheduler.schedule(jobInfo)
         }
 
-        private fun convert(boundingBox: BoundingBox): PersistableBundle {
+        private fun convertPersistable(boundingBox: BoundingBox): PersistableBundle {
             val bundle = PersistableBundle()
             bundle.putDouble("minLat", boundingBox.minLat)
             bundle.putDouble("minLon", boundingBox.minLon)
@@ -60,13 +61,26 @@ class OpenStreetMapsClient : JobService() {
             return bundle
         }
 
-        fun convert(bundle: PersistableBundle): BoundingBox {
+        fun convertPersistable(bundle: PersistableBundle): BoundingBox {
             return BoundingBox(
                     minLat = bundle.getDouble("minLat"),
                     minLon = bundle.getDouble("minLon"),
                     maxLat = bundle.getDouble("maxLat"),
                     maxLon = bundle.getDouble("maxLon")
             )
+        }
+
+        fun convert(bundle: Bundle): BoundingBox {
+            val minLat = bundle.getDouble("minLat")
+            val minLon = bundle.getDouble("minLon")
+            val maxLat = bundle.getDouble("maxLat")
+            val maxLon = bundle.getDouble("maxLon")
+            return BoundingBox(minLat, minLon, maxLat, maxLon)
+        }
+
+        fun convert(boundingBox: BoundingBox): Bundle {
+            val bundle = Bundle()
+            return bundle
         }
     }
 
@@ -75,7 +89,7 @@ class OpenStreetMapsClient : JobService() {
             Log.e(TAG, "Could not read bounding box information from job parameters")
             return false
         }
-        val boundingBox = convert(params.extras)
+        val boundingBox = convertPersistable(params.extras)
         val isStartedManually = params.extras[IS_STARTED_MANUALLY] as Boolean
         val thread = Thread {
             run(boundingBox, isStartedManually)
@@ -94,6 +108,8 @@ class OpenStreetMapsClient : JobService() {
     }
 
     private fun run(boundingBox: BoundingBox, isStartedManually: Boolean) {
+        Log.i(TAG, "Started download for $boundingBox")
+
         val url = createUrl(boundingBox)
         val downloadResult = download(url)
         val osm = xmlMapper.readValue<Osm>(downloadResult, Osm::class.java)
@@ -105,6 +121,7 @@ class OpenStreetMapsClient : JobService() {
             action = MANUAL_DOWNLOAD_COMPLETE_ACTION
         }
         val intent = Intent(action)
+        intent.putExtras(convert(boundingBox))
         val localBroadcastManager = LocalBroadcastManager.getInstance(this)
         val success = localBroadcastManager.sendBroadcast(intent)
         if (!success) {
