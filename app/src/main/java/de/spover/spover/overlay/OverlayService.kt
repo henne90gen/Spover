@@ -63,7 +63,7 @@ class OverlayService : Service(), View.OnTouchListener {
         settingsStore = SettingsStore(this)
 
         speedLimitService = SpeedLimitService(this, this::setSpeedLimit, this::adaptUIToChangedEnvironment)
-        locationService = LocationService(this, this::updateSpeed, speedLimitService::updateCurrentLocation)
+        locationService = LocationService(this, this::updateSpeed, this::setSpeedUnavailable, speedLimitService::updateCurrentLocation)
 
         lightService = LightService(this, this::adaptUIToChangedEnvironment)
 
@@ -79,6 +79,10 @@ class OverlayService : Service(), View.OnTouchListener {
         speedLimitService.updateSpeedMode(speedInKilometersPerHour)
         adaptUIToChangedEnvironment()
         tvSpeed.text = speedInKilometersPerHour.toString()
+    }
+
+    private fun setSpeedUnavailable() {
+        tvSpeed.text = "\uD83D\uDEF0"
     }
 
     // OSM provides speed limits in km/h

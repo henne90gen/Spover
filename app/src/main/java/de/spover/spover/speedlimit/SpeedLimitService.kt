@@ -9,7 +9,7 @@ import android.util.Log
 import de.spover.spover.settings.SettingsStore
 import de.spover.spover.settings.SpoverSettings
 import android.os.AsyncTask
-import android.os.Bundle
+import android.os.Handler
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import de.spover.spover.BoundingBox
 import de.spover.spover.database.*
@@ -32,7 +32,6 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
         private var TAG = SpeedLimitService::class.java.simpleName
         private val NEW_BB_DIST_FROM_LOCATION = 1000
         private val MIN_BB_DIST_FROM_EDGE = 200
-
     }
 
     private var settingsStore: SettingsStore = SettingsStore(context)
@@ -127,13 +126,18 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
             return
         }
 
+
+        lastLocation = Location(currentLocation)
+        updateSpeedLimit(location)
+    }
+
+    private fun updateSpeedLimit(location: Location) {
         // no need to update the speed limit when moving just a tiny bit
         if (location.distanceTo(currentLocation) < 10) {
             // FIXME uncomment after debugging
             // return
         }
 
-        lastLocation = Location(currentLocation)
         val closestWay = SpeedLimitExtractor.findClosestWay(location, lastLocation!!, wayMap)
         currentSpeedLimit = SpeedLimitExtractor.extractSpeedLimit(closestWay)
         currentLocation = location

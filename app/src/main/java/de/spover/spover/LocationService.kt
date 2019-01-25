@@ -7,18 +7,24 @@ import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
+import android.os.Handler
 import androidx.core.content.ContextCompat
 import android.util.Log
 
 typealias SpeedCallback = (Double) -> Unit
+typealias SpeedUnavailable = () -> Unit
 typealias LocationCallback = (Location) -> Unit
 typealias TimeStamp = Long
 typealias Speed = Double
 
-class LocationService(var context: Context, private val speedCallback: SpeedCallback?, private val locationCallback: LocationCallback?) : LocationListener {
+class LocationService(var context: Context,
+                      private val speedCallback: SpeedCallback?,
+                      private val speedUnavailableCallback: SpeedUnavailable?,
+                      private val locationCallback: LocationCallback?) : LocationListener {
     companion object {
         private val TAG = LocationService::class.java.simpleName
         private const val SPEED_THRESHOLD = 1 / 3.6
+        private val TIMEOUT = 10000
     }
 
     private var lastLocation: Location? = null
@@ -28,6 +34,9 @@ class LocationService(var context: Context, private val speedCallback: SpeedCall
 
     private val speedHistory = ArrayList<Pair<TimeStamp, Speed>>()
 
+    // time in milliseconds with no location update before the current speed and speed limit gets removed
+    private var timeout = TIMEOUT
+
     init {
         if (ContextCompat.checkSelfPermission(context,
                         Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -35,6 +44,25 @@ class LocationService(var context: Context, private val speedCallback: SpeedCall
         } else {
             Log.e(TAG, "Location permission was not granted")
         }
+        setupNoLocationTimeoutHandler()
+    }
+
+    private fun setupNoLocationTimeoutHandler() {
+        val handler = Handler()
+        val delay = 1000L //milliseconds
+        handler.postDelayed(object : Runnable {
+            override fun run() {
+                timeout -= delay.toInt()
+                if (timeout <= 0) {
+                    speedUnavailableCallback?.invoke()
+                }
+                handler.postDelayed(this, delay)
+            }
+        }, delay)
+    }
+
+    private fun resetTimeout() {
+        timeout = TIMEOUT
     }
 
     override fun onLocationChanged(location: Location) {
@@ -58,6 +86,7 @@ class LocationService(var context: Context, private val speedCallback: SpeedCall
 
         lastLocation = location
         lastLocUpdateTime = currentTime
+        resetTimeout()
         locationCallback?.invoke(location)
     }
 
