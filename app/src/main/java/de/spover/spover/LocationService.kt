@@ -9,10 +9,11 @@ import android.location.LocationManager
 import android.os.Bundle
 import androidx.core.content.ContextCompat
 import android.util.Log
-import de.spover.spover.network.OpenStreetMapsClient
 
 typealias SpeedCallback = (Double) -> Unit
 typealias LocationCallback = (Location) -> Unit
+typealias TimeStamp = Long
+typealias Speed = Double
 
 class LocationService(var context: Context, private val speedCallback: SpeedCallback?, private val locationCallback: LocationCallback?) : LocationListener {
     companion object {
@@ -25,7 +26,7 @@ class LocationService(var context: Context, private val speedCallback: SpeedCall
 
     private val locationManager: LocationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
-    private val speedList = ArrayList<Double>()
+    private val speedHistory = ArrayList<Pair<TimeStamp, Speed>>()
 
     init {
         if (ContextCompat.checkSelfPermission(context,
@@ -65,16 +66,17 @@ class LocationService(var context: Context, private val speedCallback: SpeedCall
     }
 
     private fun calculateMovingWeightedAverage(speed: Double): Double {
-        speedList.add(speed)
+        speedHistory.add(Pair(System.currentTimeMillis(), speed))
         var median = 0.0
         var div = 0.0
-        for (i in 1..speedList.size) {
-            median += speedList[i - 1] * i
-            div += i
+        for (entry in speedHistory) {
+            val weight = 1.0f / (System.currentTimeMillis() - entry.first + 1000)
+            median += weight * entry.second
+            div += weight
         }
         median /= div
-        while (speedList.size > 10) {
-            speedList.removeAt(0)
+        while (speedHistory.size > 5) {
+            speedHistory.removeAt(0)
         }
         return median
     }
