@@ -1,10 +1,7 @@
 package de.spover.spover
 
-import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.FrameLayout
-import android.widget.Switch
 import androidx.appcompat.app.AppCompatActivity
 import de.spover.spover.fragments.SettingsFragment
 
