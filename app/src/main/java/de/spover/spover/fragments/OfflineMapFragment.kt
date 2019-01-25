@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.graphics.Point
+import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -152,10 +153,10 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun subdivideBoundingBox(bb: BoundingBox): List<BoundingBox> {
-        var maxSideLength = 10000 // divide if bounding box is larger
-        var bbList = mutableListOf<BoundingBox>()
+        val maxSideLength = 10000 // divide if bounding box is larger
+        val bbList = mutableListOf<BoundingBox>()
 
-        var tmpLoc = Location("")
+        val tmpLoc = Location("")
         tmpLoc.latitude = bb.minLat
         tmpLoc.longitude = bb.minLon
 
@@ -234,7 +235,7 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
 
                 drawPolygons()
 
-                // currentPositionIndex index will be increased before accessing the first element
+                // currentPositionIndex will be increased before accessing the first element
                 currentPositionIndex = requests.size - 2
                 selectNextArea()
             }
