@@ -145,7 +145,6 @@ class OverlayService : Service(), View.OnTouchListener {
                 PixelFormat.TRANSLUCENT
         )
 
-
         destroyOverlayView = layoutInflater.inflate(R.layout.destroy_overlay_view, null)
         destroyOverlayView?.apply {
             destroyIcon = findViewById(R.id.destroy_icon)
@@ -167,7 +166,6 @@ class OverlayService : Service(), View.OnTouchListener {
         storePrefPosition(x, y)
         settingsStore.set(SpoverSettings.FIRST_LAUNCH, false)
     }
-
 
     /**
      * change the overlay colors depending on:

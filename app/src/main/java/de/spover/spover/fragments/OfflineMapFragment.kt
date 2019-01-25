@@ -7,8 +7,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.graphics.Point
-import android.location.Location
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -26,19 +26,34 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import de.spover.spover.BoundingBox
 import de.spover.spover.OverlayWithHole
 import de.spover.spover.R
+import de.spover.spover.database.AppDatabase
+import de.spover.spover.database.Request
 import de.spover.spover.network.OpenStreetMapsClient
 import java.util.*
+import kotlin.concurrent.thread
 
 
 class OfflineMapFragment : Fragment(), OnMapReadyCallback {
 
+    companion object {
+        val TAG = OfflineMapFragment::class.simpleName
+    }
+
     private lateinit var broadcastReceiver: BroadcastReceiver
 
+    private var isMenuOpen = false
     private var currentPositionIndex = 0
-    private var googleMap: GoogleMap? = null
-    private var positions: List<LatLng> = Collections.emptyList()
+    private lateinit var googleMap: GoogleMap
+
+    private var requests: MutableList<Request> = Collections.emptyList()
+    private var polygons: MutableMap<Long, PolygonOptions> = Collections.emptyMap()
 
     private lateinit var overlay: OverlayWithHole
+
+    private lateinit var menuBtn: FloatingActionButton
+    private lateinit var btnNextArea: FloatingActionButton
+    private lateinit var btnDeleteArea: FloatingActionButton
+    private lateinit var btnNewArea: FloatingActionButton
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val rootView = inflater.inflate(R.layout.offline_map, container, false)
@@ -51,19 +66,63 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
         val mapFragment = childFragmentManager.findFragmentById(R.id.offlineMap) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-        val btnNextArea = rootView.findViewById<FloatingActionButton>(R.id.btnNextArea)
+        btnNextArea = rootView.findViewById(R.id.btnNextArea)
         btnNextArea.setOnClickListener {
-            moveToNextPosition()
+            selectNextArea()
         }
 
-        val btnNewArea = rootView.findViewById<FloatingActionButton>(R.id.btnNewArea)
+        btnDeleteArea = rootView.findViewById(R.id.btnDeleteArea)
+        btnDeleteArea.setOnClickListener {
+            closeMenu()
+            deleteSelectedArea()
+        }
+
+        btnNewArea = rootView.findViewById(R.id.btnNewArea)
         btnNewArea.setOnClickListener {
             startDownloadOfNewArea()
+            closeMenu()
+        }
+
+        menuBtn = rootView.findViewById(R.id.btnMenu)
+        menuBtn.setOnClickListener {
+            if (!isMenuOpen) {
+                openMenu()
+            } else {
+                closeMenu()
+            }
         }
 
         registerBroadcastReceiver()
 
         return rootView
+    }
+
+    private fun openMenu() {
+        isMenuOpen = true
+
+        btnNextArea.animate().translationY(-resources.getDimension(R.dimen.next_area_position))
+        btnDeleteArea.animate().translationY(-resources.getDimension(R.dimen.delete_area_position))
+        btnNewArea.animate().translationY(-resources.getDimension(R.dimen.new_area_position))
+
+        btnNextArea.show()
+        btnDeleteArea.show()
+        btnNewArea.show()
+
+        menuBtn.animate().rotation(90.0f)
+    }
+
+    private fun closeMenu() {
+        isMenuOpen = false
+
+        btnNextArea.animate().translationY(0.0f)
+        btnDeleteArea.animate().translationY(0.0f)
+        btnNewArea.animate().translationY(0.0f)
+
+        btnNextArea.hide()
+        btnDeleteArea.hide()
+        btnNewArea.hide()
+
+        menuBtn.animate().rotation(0.0f)
     }
 
     override fun onDestroy() {
@@ -74,10 +133,10 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
 
     private fun startDownloadOfNewArea() {
         val topRight = Point(overlay.cutout.right.toInt(), overlay.cutout.top.toInt())
-        val topRightLocation = googleMap!!.projection.fromScreenLocation(topRight)
+        val topRightLocation = googleMap.projection.fromScreenLocation(topRight)
 
         val bottomLeft = Point(overlay.cutout.left.toInt(), overlay.cutout.bottom.toInt())
-        val bottomLeftLocation = googleMap!!.projection.fromScreenLocation(bottomLeft)
+        val bottomLeftLocation = googleMap.projection.fromScreenLocation(bottomLeft)
 
         val boundingBox = BoundingBox(
                 bottomLeftLocation.latitude,
@@ -130,8 +189,7 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
                     return
                 }
 
-                // We are done downloading, which means that we need to return to the previous view
-                activity!!.supportFragmentManager.popBackStack()
+                reloadAreas()
             }
         }
         val localBroadcastManager = LocalBroadcastManager.getInstance(activity!!)
@@ -153,42 +211,101 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
             googleMap.isMyLocationEnabled = true
         }
 
-        val ids = arguments!!.getStringArrayList("ids")
-                ?: Collections.emptyList<String>()
-
-        positions = ids.map {
-            val minLon = arguments!!.getDouble("$it-minLon")
-            val minLat = arguments!!.getDouble("$it-minLat")
-            val maxLon = arguments!!.getDouble("$it-maxLon")
-            val maxLat = arguments!!.getDouble("$it-maxLat")
-            val rectOptions = PolygonOptions()
-                    .add(LatLng(minLat, minLon),
-                            LatLng(maxLat, minLon),
-                            LatLng(maxLat, maxLon),
-                            LatLng(minLat, maxLon))
-            googleMap.addPolygon(rectOptions)
-            val centerLon = (minLon + maxLon) / 2
-            val centerLat = (minLat + maxLat) / 2
-            LatLng(centerLat, centerLon)
-        }
-
-        moveToNextPosition()
+        reloadAreas()
     }
 
-    private fun moveToNextPosition() {
-        if (googleMap == null) {
-            return
-        }
+    private fun reloadAreas() {
+        thread {
+            val db = AppDatabase.getDatabase(context!!)
+            requests = db.requestDao().findAllRequests().toMutableList()
+            db.close()
 
-        if (positions.isEmpty()) {
-            return
-        }
+            activity?.runOnUiThread {
+                polygons = requests.map {
+                    val rectOptions = PolygonOptions()
+                            .add(
+                                    LatLng(it.minLat, it.minLon),
+                                    LatLng(it.maxLat, it.minLon),
+                                    LatLng(it.maxLat, it.maxLon),
+                                    LatLng(it.minLat, it.maxLon)
+                            )
+                    it.id!! to rectOptions
+                }.toMap().toMutableMap()
 
-        googleMap?.apply {
-            moveCamera(CameraUpdateFactory.newLatLngZoom(positions[currentPositionIndex++], 12.0f))
-            if (currentPositionIndex >= positions.size) {
-                currentPositionIndex = 0
+                drawPolygons()
+
+                // currentPositionIndex index will be increased before accessing the first element
+                currentPositionIndex = requests.size - 2
+                selectNextArea()
             }
+        }
+    }
+
+    private fun drawPolygons() {
+        googleMap.clear()
+        polygons.forEach {
+            googleMap.addPolygon(it.value)
+        }
+    }
+
+    private fun deleteSelectedArea() {
+        val selectedRequest = requests.removeAt(currentPositionIndex)
+        currentPositionIndex--
+
+        polygons.remove(selectedRequest.id!!)
+        drawPolygons()
+
+        thread {
+            val db = AppDatabase.getDatabase(context!!)
+
+            val ways = db.wayDao().findWaysByRequestId(selectedRequest.id!!)
+            ways.forEach { way ->
+                val nodes = db.nodeDao().findNodesByWayId(way.id!!)
+                db.nodeDao().delete(*nodes.toTypedArray())
+                Log.i(TAG, "Deleted ${nodes.size} nodes")
+            }
+            db.wayDao().delete(*ways.toTypedArray())
+            Log.i(TAG, "Deleted ${ways.size} ways")
+
+            db.requestDao().delete(selectedRequest)
+            Log.i(TAG, "Deleted request with id=${selectedRequest.id}")
+
+            db.close()
+
+            activity!!.runOnUiThread {
+                reloadAreas()
+            }
+        }
+    }
+
+    private fun selectNextArea() {
+        if (requests.isEmpty()) {
+            return
+        }
+
+        currentPositionIndex++
+        if (currentPositionIndex >= requests.size) {
+            currentPositionIndex = 0
+        }
+
+        googleMap.apply {
+            val selectedRequest = requests[currentPositionIndex]
+
+            val boundingBox = selectedRequest.boundingBox()
+            val centerLon = (boundingBox.minLon + boundingBox.maxLon) / 2
+            val centerLat = (boundingBox.minLat + boundingBox.maxLat) / 2
+            val position = LatLng(centerLat, centerLon)
+            moveCamera(CameraUpdateFactory.newLatLngZoom(position, 14.0f))
+
+            polygons.forEach {
+                activity!!.getColor(R.color.colorPrimary)
+                if (it.key == selectedRequest.id!!) {
+                    it.value.strokeColor(activity!!.getColor(R.color.colorPrimary))
+                } else {
+                    it.value.strokeColor(activity!!.getColor(R.color.black))
+                }
+            }
+            drawPolygons()
         }
     }
 }

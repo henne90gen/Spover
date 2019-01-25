@@ -16,9 +16,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Switch
 import android.widget.Toast
-import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
-import de.spover.spover.MainActivity
 import de.spover.spover.PermissionManager
 import de.spover.spover.R
 import de.spover.spover.overlay.OverlayServiceHelper
@@ -107,14 +105,18 @@ class SettingsFragment : Fragment() {
 
         offlineAreasBtn = rootView.findViewById(R.id.btnOfflineAreas)
         offlineAreasBtn.setOnClickListener {
-            val offlineAreasFragment = OfflineAreasFragment()
-            val transaction = activity!!.supportFragmentManager.beginTransaction()
-            transaction.replace(R.id.fragmentContainer, offlineAreasFragment)
-            transaction.addToBackStack(null)
-            transaction.commit()
+            goToOfflineMap()
         }
 
         return rootView
+    }
+
+    private fun goToOfflineMap() {
+        val offlineMapFragment = OfflineMapFragment()
+        val transaction = activity!!.supportFragmentManager.beginTransaction()
+        transaction.replace(R.id.fragmentContainer, offlineMapFragment)
+        transaction.addToBackStack(null)
+        transaction.commit()
     }
 
     private fun setupSettingsSwitch(rootView: View, id: Int, setting: SpoverSettings<Boolean>): Switch {

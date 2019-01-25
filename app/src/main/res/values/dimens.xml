@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="next_area_position">220dp</dimen>
+    <dimen name="delete_area_position">150dp</dimen>
+    <dimen name="new_area_position">80dp</dimen>
+</resources>
