@@ -65,6 +65,10 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
             return
         }
 
+        if (intent.action == OpenStreetMapsClient.DOWNLOAD_FAILED_ACTION) {
+            downloading.set(false)
+        }
+
         if (intent.action == OpenStreetMapsClient.AUTO_DOWNLOAD_COMPLETE_ACTION) {
             downloading.set(false)
 

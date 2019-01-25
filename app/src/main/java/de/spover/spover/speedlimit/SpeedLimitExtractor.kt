@@ -35,7 +35,7 @@ class SpeedLimitExtractor {
 
             // if the closest way is to far away we don't accept it
             if (minDistance / 2 > 80) {
-                Log.e(TAG, "Closest way is too far away ${minDistance / 2}m")
+                Log.d(TAG, "Closest way is too far away ${minDistance / 2}m")
                 result = null
             } else {
                 Log.d(TAG, "Closest way is around ${minDistance / 2}m away and has a speed limit of ${extractSpeedLimit(result)}km/h")
@@ -47,7 +47,7 @@ class SpeedLimitExtractor {
         fun extractSpeedLimit(way: Way?): Pair<Int, String> {
             return when (way) {
                 null -> {
-                    Log.e(TAG, "Current way is undefined, no speed limit available")
+                    Log.d(TAG, "Current way is undefined, no speed limit available")
                     Pair(Int.MAX_VALUE, "--")
                 }
                 else -> {

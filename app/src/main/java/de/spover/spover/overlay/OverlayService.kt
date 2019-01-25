@@ -1,5 +1,6 @@
 package de.spover.spover.overlay
 
+import android.annotation.SuppressLint
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -29,24 +30,32 @@ class OverlayService : Service(), View.OnTouchListener {
     private lateinit var speedLimitService: SpeedLimitService
     private lateinit var lightService: LightService
 
-    private var windowManager: WindowManager? = null
-    private var floatingView: View? = null
+    private lateinit var windowManager: WindowManager
 
-    private var params: WindowManager.LayoutParams? = null
+    private var floatingView: View? = null
+    private lateinit var floatingViewParams: WindowManager.LayoutParams
     private lateinit var rlSpeed: RelativeLayout
     private lateinit var rlSpeedLimit: RelativeLayout
     private lateinit var ivSpeed: ImageView
     private lateinit var ivSpeedLimit: ImageView
     private lateinit var tvSpeed: TextView
 
+    private var destroyOverlayView: View? = null
+    private lateinit var destroyViewParams: WindowManager.LayoutParams
+    private lateinit var destroyIcon: ImageView
+
     private var soundManager: SoundManager = SoundManager.getInstance()
 
     private lateinit var tvSpeedLimit: TextView
 
+    private var touchStartX = 0f
+    private var touchStartY = 0f
+    private var viewStartX = 0
+    private var viewStartY = 0
+
     override fun onBind(intent: Intent): IBinder? {
         return null
     }
-
 
     override fun onCreate() {
         super.onCreate()
@@ -77,8 +86,10 @@ class OverlayService : Service(), View.OnTouchListener {
         tvSpeedLimit.text = speedLimitText
     }
 
+    @Suppress("DEPRECATION")
+    @SuppressLint("InflateParams")
     private fun addOverlayView() {
-        params = WindowManager.LayoutParams(
+        floatingViewParams = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
@@ -86,32 +97,58 @@ class OverlayService : Service(), View.OnTouchListener {
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED,
                 PixelFormat.TRANSLUCENT)
 
-        params!!.gravity = Gravity.TOP or Gravity.START
+        floatingViewParams.apply {
+            gravity = Gravity.TOP or Gravity.START
 
-        if (settingsStore.get(SpoverSettings.FIRST_LAUNCH)) {
-            setFirstLaunchPos()
+            if (settingsStore.get(SpoverSettings.FIRST_LAUNCH)) {
+                setFirstLaunchPos()
+            }
+
+            x = settingsStore.get(SpoverSettings.OVERLAY_X)
+            y = settingsStore.get(SpoverSettings.OVERLAY_Y)
         }
 
-        params!!.x = settingsStore.get(SpoverSettings.OVERLAY_X)
-        params!!.y = settingsStore.get(SpoverSettings.OVERLAY_Y)
+        val layoutInflater = getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+        floatingView = layoutInflater.inflate(R.layout.floating_view, null)
 
-        floatingView = (getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater).inflate(R.layout.floating_view, null)
-
-        floatingView?.let {
-            rlSpeed = it.findViewById(R.id.rl_speed)
+        val overlayService = this
+        floatingView?.apply {
+            rlSpeed = findViewById(R.id.rl_speed)
             rlSpeed.visibility = if (isPrefSpeedVisible()) View.VISIBLE else View.GONE
 
-            rlSpeedLimit = it.findViewById(R.id.rl_speed_limit)
+            rlSpeedLimit = findViewById(R.id.rl_speed_limit)
             rlSpeedLimit.visibility = if (isPrefSpeedLimitVisible()) View.VISIBLE else View.GONE
 
-            ivSpeed = it.findViewById(R.id.iv_speed)
-            ivSpeedLimit = it.findViewById(R.id.iv_speed_limit)
+            ivSpeed = findViewById(R.id.iv_speed)
+            ivSpeedLimit = findViewById(R.id.iv_speed_limit)
 
-            tvSpeed = it.findViewById(R.id.tv_speed)
-            tvSpeedLimit = it.findViewById(R.id.tv_speed_limit)
+            tvSpeed = findViewById(R.id.tv_speed)
+            tvSpeedLimit = findViewById(R.id.tv_speed_limit)
 
-            it.setOnTouchListener(this)
-            windowManager?.addView(floatingView, params)
+            setOnTouchListener(overlayService)
+            windowManager.addView(this, floatingViewParams)
+        }
+
+        // FLAG_SHOW_WHEN_LOCKED is deprecated, but the new method is only available for activities and the overlay is a service
+        val flags = (WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                or WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED)
+        destroyViewParams = WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                flags,
+                PixelFormat.TRANSLUCENT
+        )
+
+
+        destroyOverlayView = layoutInflater.inflate(R.layout.destroy_overlay_view, null)
+        destroyOverlayView?.apply {
+            destroyIcon = findViewById(R.id.destroy_icon)
+            destroyIcon.visibility = View.INVISIBLE
+            destroyIcon.isClickable = false
+
+            windowManager.addView(this, destroyViewParams)
         }
     }
 
@@ -120,7 +157,7 @@ class OverlayService : Service(), View.OnTouchListener {
      */
     private fun setFirstLaunchPos() {
         val displaySize = Point()
-        windowManager!!.defaultDisplay.getSize(displaySize)
+        windowManager.defaultDisplay.getSize(displaySize)
         val y = (displaySize.y) / 2
         val x = (displaySize.x)
         storePrefPosition(x, y)
@@ -166,12 +203,18 @@ class OverlayService : Service(), View.OnTouchListener {
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.d(TAG, "destroy called")
+        Log.d(TAG, "Destroying overlay")
 
         if (floatingView != null) {
-            windowManager!!.removeView(floatingView)
+            windowManager.removeView(floatingView)
             floatingView = null
         }
+
+        if (destroyOverlayView != null) {
+            windowManager.removeView(destroyOverlayView)
+            destroyOverlayView = null
+        }
+
         locationService.unregisterLocationUpdates()
         lightService.destroy()
         stopSelf()
@@ -180,7 +223,6 @@ class OverlayService : Service(), View.OnTouchListener {
     private fun storeReopenFlag(value: Boolean) {
         settingsStore.set(SpoverSettings.REOPEN_FLAG, value)
     }
-
 
     private fun storePrefPosition(x: Int, y: Int) {
         settingsStore.set(SpoverSettings.OVERLAY_X, x)
@@ -199,19 +241,26 @@ class OverlayService : Service(), View.OnTouchListener {
      * returns if the overlay is close enough to the bottom so it should get closed
      * @param y - y value of touch up position
      */
-    private fun shouldClose(y: Int): Boolean {
-        val displaySize = Point()
-        windowManager!!.defaultDisplay.getSize(displaySize)
-        val closedThresholdY = displaySize.y - floatingView!!.height
-        Log.d(TAG, "threshold: $closedThresholdY, val: $y")
-        return closedThresholdY - y <= 0
+    private fun shouldClose(x: Float, y: Float): Boolean {
+        val iconPadding = 25
+        val iconX = destroyIcon.x - iconPadding
+        val iconY = destroyIcon.y - iconPadding
+        val iconWidth = destroyIcon.width + 2 * iconPadding
+        val iconHeight = destroyIcon.height + 2 * iconPadding
+
+        Log.d(TAG, "X: $x, Y: $y, IconX: $iconX, IconY: $iconY, IconWidth: $iconWidth, IconHeight: $iconHeight")
+
+        if (x > iconX && x < iconX + iconWidth) {
+            if (y > iconY && y < iconY + iconHeight) {
+                return true
+            }
+        }
+        return false
     }
 
-    private var touchStartX = 0f
-    private var touchStartY = 0f
-    private var viewStartX = 0
-    private var viewStartY = 0
     override fun onTouch(view: View, motionEvent: MotionEvent): Boolean {
+        floatingView?.performClick()
+
         val isEvent = { action: Int ->
             action == motionEvent.action
         }
@@ -221,28 +270,32 @@ class OverlayService : Service(), View.OnTouchListener {
                 touchStartX = motionEvent.rawX
                 touchStartY = motionEvent.rawY
 
-                viewStartX = params!!.x
-                viewStartY = params!!.y
+                viewStartX = floatingViewParams.x
+                viewStartY = floatingViewParams.y
+
+                destroyIcon.visibility = View.VISIBLE
             }
             isEvent(MotionEvent.ACTION_MOVE) -> {
                 val dX = motionEvent.rawX - touchStartX
                 val dY = motionEvent.rawY - touchStartY
 
-                params!!.x = (dX + viewStartX).toInt()
-                params!!.y = (dY + viewStartY).toInt()
+                floatingViewParams.x = (dX + viewStartX).toInt()
+                floatingViewParams.y = (dY + viewStartY).toInt()
 
                 try {
-                    windowManager!!.updateViewLayout(floatingView, params)
+                    windowManager.updateViewLayout(floatingView, floatingViewParams)
                 } catch (ignore: IllegalArgumentException) {
-                    // FixMe
+                    // FIXME add logging and user feedback
                 }
             }
             isEvent(MotionEvent.ACTION_UP) -> {
-                if (shouldClose(params!!.y)) {
+                destroyIcon.visibility = View.INVISIBLE
+
+                if (shouldClose(motionEvent.rawX, motionEvent.rawY)) {
                     onDestroy()
                     storeReopenFlag(false)
                 } else {
-                    storePrefPosition(params!!.x, params!!.y)
+                    storePrefPosition(floatingViewParams.x, floatingViewParams.y)
                 }
             }
         }
