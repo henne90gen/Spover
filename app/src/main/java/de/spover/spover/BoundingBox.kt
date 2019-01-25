@@ -16,7 +16,7 @@ class BoundingBox(
         }
 
         // https://gis.stackexchange.com/questions/2951/algorithm-for-offsetting-a-latitude-longitude-by-some-amount-of-meters
-        private fun translateLocationByMeters(location: Location, transX: Int, transY: Int): Location {
+        fun translateLocationByMeters(location: Location, transX: Int, transY: Int): Location {
             val result = Location("")
             result.latitude = location.latitude + (transY / 111111.0f)
             result.longitude = location.longitude + (transX / (111111.0f * Math.cos(Math.toRadians(location.latitude))))

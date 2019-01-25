@@ -9,7 +9,6 @@ import android.util.Log
 import de.spover.spover.settings.SettingsStore
 import de.spover.spover.settings.SpoverSettings
 import android.os.AsyncTask
-import android.os.Handler
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import de.spover.spover.BoundingBox
 import de.spover.spover.database.*
@@ -126,7 +125,7 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
             return
         }
 
-
+        Log.d(TAG, "update speed limit")
         lastLocation = Location(currentLocation)
         updateSpeedLimit(location)
     }

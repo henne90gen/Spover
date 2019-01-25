@@ -92,6 +92,37 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
         // FIXME show loading indicator and disable user interactions
     }
 
+    private fun subdivideBoundingBox(bb: BoundingBox): List<BoundingBox> {
+        var maxSideLength = 10000 // divide if bounding box is larger
+        var bbList = mutableListOf<BoundingBox>()
+
+        var tmpLoc = Location("")
+        tmpLoc.latitude = bb.minLat
+        tmpLoc.longitude = bb.minLon
+
+        var bbMax = BoundingBox.translateLocationByMeters(tmpLoc, maxSideLength, maxSideLength)
+        var currBB = BoundingBox(bb.minLat, bb.minLon, bbMax.latitude, bbMax.longitude)
+        while (currBB.maxLat < bb.maxLat) {
+            bbList.add(currBB)
+
+            bbMax = BoundingBox.translateLocationByMeters(bbMax, maxSideLength, 0)
+            currBB = BoundingBox(currBB.minLat, currBB.maxLon, currBB.maxLat, bbMax.longitude)
+            while (currBB.maxLon < bb.maxLon) {
+                bbList.add(currBB)
+                bbMax = BoundingBox.translateLocationByMeters(bbMax, maxSideLength, 0)
+                currBB = BoundingBox(currBB.minLat, currBB.maxLon, currBB.maxLat, bbMax.longitude)
+            }
+            // todo add remaining part smaller 10.000
+
+            currBB = BoundingBox(currBB.minLat, bb.minLon, currBB.maxLat, bb.maxLon)
+            bbMax.latitude = currBB.maxLat
+            bbMax.longitude = currBB.maxLon
+            bbMax = BoundingBox.translateLocationByMeters(bbMax, 0, maxSideLength)
+            // todo add remaining part smaller 10.000
+        }
+        return bbList
+    }
+
     private fun registerBroadcastReceiver() {
         broadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
