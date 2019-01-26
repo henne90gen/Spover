@@ -22,6 +22,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolygonOptions
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import de.spover.spover.BoundingBox
@@ -57,6 +58,9 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
     private lateinit var btnDeleteArea: FloatingActionButton
     private lateinit var btnNewArea: FloatingActionButton
 
+    // flag, to make sure view is only centered on initially entering the map fragment
+    private var viewHasBeenCentered = false
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val rootView = inflater.inflate(R.layout.offline_map, container, false)
 
@@ -70,7 +74,7 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
 
         btnNextArea = rootView.findViewById(R.id.btnNextArea)
         btnNextArea.setOnClickListener {
-            selectNextArea()
+            selectNextAreaAndRedrawArea()
         }
 
         btnDeleteArea = rootView.findViewById(R.id.btnDeleteArea)
@@ -146,8 +150,6 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
                 topRightLocation.latitude,
                 topRightLocation.longitude
         )
-//            googleMap!!.addMarker(MarkerOptions().position(topLeftLocation))
-//            googleMap!!.addMarker(MarkerOptions().position(bottomRightLocation))
 
         for (bbPart: BoundingBox in subdivideBoundingBox(boundingBox)) {
             Log.d(TAG, "bb $bbPart")
@@ -222,10 +224,19 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
             googleMap.isMyLocationEnabled = true
         }
 
+        googleMap.setOnMyLocationChangeListener {
+            if (requests.isEmpty() && !viewHasBeenCentered) {
+                val myLocation = LatLng(it.latitude, it.longitude)
+                googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(myLocation, 14.0f))
+
+                viewHasBeenCentered = true
+            }
+        }
+
         reloadAreas()
     }
 
-    private fun reloadAreas() {
+    private fun reloadAreas(moveCameraAfterUpdate: Boolean = true) {
         thread {
             val db = AppDatabase.getDatabase(context!!)
             requests = db.requestDao().findAllRequests().toMutableList()
@@ -243,28 +254,18 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
                     it.id!! to rectOptions
                 }.toMap().toMutableMap()
 
-                drawPolygons()
-
                 // currentPositionIndex will be increased before accessing the first element
                 currentPositionIndex = requests.size - 2
-                selectNextArea()
+                selectNextAreaAndRedrawArea(moveCameraAfterUpdate)
             }
-        }
-    }
-
-    private fun drawPolygons() {
-        googleMap.clear()
-        polygons.forEach {
-            googleMap.addPolygon(it.value)
         }
     }
 
     private fun deleteSelectedArea() {
         val selectedRequest = requests.removeAt(currentPositionIndex)
-        currentPositionIndex--
-
         polygons.remove(selectedRequest.id!!)
-        drawPolygons()
+
+        selectNextAreaAndRedrawArea()
 
         thread {
             val db = AppDatabase.getDatabase(context!!)
@@ -284,15 +285,22 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
             db.close()
 
             activity!!.runOnUiThread {
-                reloadAreas()
+                reloadAreas(false)
             }
         }
     }
 
-    private fun selectNextArea() {
+    private fun selectNextAreaAndRedrawArea(moveCameraAfterUpdate: Boolean = true) {
+        // Remove all polygons from map
+        googleMap.clear()
+
         if (requests.isEmpty()) {
+            btnDeleteArea.isEnabled = false
+            btnNextArea.isEnabled = false
             return
         }
+        btnDeleteArea.isEnabled = true
+        btnNextArea.isEnabled = true
 
         currentPositionIndex++
         if (currentPositionIndex >= requests.size) {
@@ -302,21 +310,22 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
         googleMap.apply {
             val selectedRequest = requests[currentPositionIndex]
 
-            val boundingBox = selectedRequest.boundingBox()
-            val centerLon = (boundingBox.minLon + boundingBox.maxLon) / 2
-            val centerLat = (boundingBox.minLat + boundingBox.maxLat) / 2
-            val position = LatLng(centerLat, centerLon)
-            moveCamera(CameraUpdateFactory.newLatLngZoom(position, 14.0f))
+            if (moveCameraAfterUpdate) {
+                val boundingBox = selectedRequest.boundingBox()
+                val southWest = LatLng(boundingBox.maxLat, boundingBox.maxLon)
+                val northEast = LatLng(boundingBox.minLat, boundingBox.minLon)
+                val bounds = LatLngBounds(northEast, southWest)
+                animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 270))
+            }
 
             polygons.forEach {
-                activity!!.getColor(R.color.colorPrimary)
                 if (it.key == selectedRequest.id!!) {
                     it.value.strokeColor(activity!!.getColor(R.color.colorPrimary))
                 } else {
                     it.value.strokeColor(activity!!.getColor(R.color.black))
                 }
+                googleMap.addPolygon(it.value)
             }
-            drawPolygons()
         }
     }
 }
