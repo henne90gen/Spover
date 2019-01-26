@@ -27,4 +27,5 @@
     <string name="et_warning_threshold">Threshold:</string>
     <string name="show_overlay">Show Overlay</string>
     <string name="select_offline_map">Select Offline Map</string>
+    <string name="num_offline_areas_label">Offline Areas:</string>
 </resources>

@@ -21,26 +21,34 @@ class DatabaseHelper private constructor() {
     private var initialized = false
 
     init {
-        thread {
-            Looper.prepare()
-            looper = Looper.myLooper()!!
-            handler = Handler(looper)
-            initialized = true
-            Looper.loop()
-        }
+        registerNewHandler()
     }
 
     fun executeTransaction(context: Context, transaction: DatabaseTransaction) {
         while (!initialized) {
         }
 
-        val success = handler.post {
+        val message = {
             val db = AppDatabase.getDatabase(context)
             transaction.invoke(db)
             db.close()
         }
+
+        val success = handler.post(message)
         if (!success) {
             Log.w(TAG, "Could not schedule database transaction")
+            registerNewHandler(message)
+        }
+    }
+
+    private fun registerNewHandler(message: () -> Unit = {}) {
+        thread {
+            Looper.prepare()
+            looper = Looper.myLooper()!!
+            handler = Handler(looper)
+            initialized = true
+            handler.post(message)
+            Looper.loop()
         }
     }
 

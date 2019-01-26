@@ -14,6 +14,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.RelativeLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -53,6 +54,7 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
 
     private lateinit var overlay: OverlayWithHole
 
+    private lateinit var numOfflineAreas: TextView
     private lateinit var menuBtn: FloatingActionButton
     private lateinit var btnNextArea: FloatingActionButton
     private lateinit var btnDeleteArea: FloatingActionButton
@@ -71,6 +73,9 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
 
         val mapFragment = childFragmentManager.findFragmentById(R.id.offlineMap) as SupportMapFragment
         mapFragment.getMapAsync(this)
+
+        numOfflineAreas = rootView.findViewById(R.id.num_offline_areas)
+        numOfflineAreas.text = "0"
 
         btnNextArea = rootView.findViewById(R.id.btnNextArea)
         btnNextArea.setOnClickListener {
@@ -260,6 +265,8 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
                             )
                     it.id!! to rectOptions
                 }.toMap().toMutableMap()
+
+                numOfflineAreas.text = "${requests.size}"
 
                 // currentPositionIndex will be increased before accessing the first element
                 currentPositionIndex = requests.size - 2

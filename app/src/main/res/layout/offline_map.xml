@@ -13,6 +13,25 @@
         android:layout_height="match_parent"
         tools:context="com.example.mapwithmarker.MapsMarkerActivity" />
 
+    <TextView
+        android:id="@+id/num_offline_areas_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="25dp"
+        android:layout_marginTop="15dp"
+        android:layout_marginEnd="10dp"
+        android:text="@string/num_offline_areas_label" />
+
+    <TextView
+        android:id="@+id/num_offline_areas"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="15dp"
+        android:layout_toEndOf="@id/num_offline_areas_label" />
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/btnNextArea"
         android:layout_width="wrap_content"
