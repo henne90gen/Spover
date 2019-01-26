@@ -14,6 +14,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.RelativeLayout
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -33,13 +34,13 @@ import de.spover.spover.database.Request
 import de.spover.spover.network.OpenStreetMapsClient
 import java.util.*
 import kotlin.concurrent.thread
-import kotlin.concurrent.timer
 
 
 class OfflineMapFragment : Fragment(), OnMapReadyCallback {
 
     companion object {
         val TAG = OfflineMapFragment::class.simpleName
+        const val MAX_BOUNDING_BOX_SIDE_LENGTH = 35000 // divide bounding box if it is larger than this
     }
 
     private lateinit var broadcastReceiver: BroadcastReceiver
@@ -159,13 +160,12 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun subdivideBoundingBox(bb: BoundingBox): List<BoundingBox> {
-        val maxSideLength = 35000 // divide if bounding box is larger
         val bbList = mutableListOf<BoundingBox>()
-        
+
         var bbMin = Location("")
         bbMin.latitude = bb.minLat
         bbMin.longitude = bb.minLon
-        var bbMax = BoundingBox.translateLocationByMeters(bbMin, 0, maxSideLength)
+        var bbMax = BoundingBox.translateLocationByMeters(bbMin, 0, MAX_BOUNDING_BOX_SIDE_LENGTH)
 
         var remainingAdded = false
         while (bbMax.latitude < bb.maxLat || !remainingAdded) {
@@ -174,22 +174,22 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
                 remainingAdded = true
                 bbMax.latitude = bb.maxLat
             }
-            bbMax = BoundingBox.translateLocationByMeters(bbMax, maxSideLength, 0)
+            bbMax = BoundingBox.translateLocationByMeters(bbMax, MAX_BOUNDING_BOX_SIDE_LENGTH, 0)
 
             while (bbMax.longitude < bb.maxLon) {
                 val tmpBB = BoundingBox(bbMin.latitude, bbMin.longitude, bbMax.latitude, bbMax.longitude)
                 bbList.add(tmpBB)
 
-                bbMax = BoundingBox.translateLocationByMeters(bbMax, maxSideLength, 0)
-                bbMin = BoundingBox.translateLocationByMeters(bbMin, maxSideLength, 0)
+                bbMax = BoundingBox.translateLocationByMeters(bbMax, MAX_BOUNDING_BOX_SIDE_LENGTH, 0)
+                bbMin = BoundingBox.translateLocationByMeters(bbMin, MAX_BOUNDING_BOX_SIDE_LENGTH, 0)
             }
             val remainingBB = BoundingBox(bbMin.latitude, bbMin.longitude, bbMax.latitude, bb.maxLon)
             bbList.add(remainingBB)
 
             bbMax.longitude = bb.minLon
-            bbMax = BoundingBox.translateLocationByMeters(bbMax, 0, maxSideLength)
+            bbMax = BoundingBox.translateLocationByMeters(bbMax, 0, MAX_BOUNDING_BOX_SIDE_LENGTH)
             bbMin.longitude = bb.minLon
-            bbMin = BoundingBox.translateLocationByMeters(bbMin, 0, maxSideLength)
+            bbMin = BoundingBox.translateLocationByMeters(bbMin, 0, MAX_BOUNDING_BOX_SIDE_LENGTH)
         }
 
         return bbList
@@ -198,15 +198,24 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
     private fun registerBroadcastReceiver() {
         broadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                if (intent == null || intent.action != OpenStreetMapsClient.MANUAL_DOWNLOAD_COMPLETE_ACTION) {
+                if (intent == null) {
                     return
                 }
-
-                reloadAreas()
+                when (intent.action) {
+                    null -> return
+                    OpenStreetMapsClient.AUTO_DOWNLOAD_COMPLETE_ACTION -> reloadAreas(false)
+                    OpenStreetMapsClient.MANUAL_DOWNLOAD_COMPLETE_ACTION -> reloadAreas(true)
+                    OpenStreetMapsClient.DOWNLOAD_FAILED_ACTION -> {
+                        Toast.makeText(context!!, "Download failed", Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
         }
         val localBroadcastManager = LocalBroadcastManager.getInstance(activity!!)
-        val intentFilter = IntentFilter(OpenStreetMapsClient.MANUAL_DOWNLOAD_COMPLETE_ACTION)
+        val intentFilter = IntentFilter()
+        intentFilter.addAction(OpenStreetMapsClient.MANUAL_DOWNLOAD_COMPLETE_ACTION)
+        intentFilter.addAction(OpenStreetMapsClient.AUTO_DOWNLOAD_COMPLETE_ACTION)
+        intentFilter.addAction(OpenStreetMapsClient.DOWNLOAD_FAILED_ACTION)
         localBroadcastManager.registerReceiver(broadcastReceiver, intentFilter)
     }
 
@@ -224,6 +233,7 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
             googleMap.isMyLocationEnabled = true
         }
 
+        @Suppress("DEPRECATION")
         googleMap.setOnMyLocationChangeListener {
             if (requests.isEmpty() && !viewHasBeenCentered) {
                 val myLocation = LatLng(it.latitude, it.longitude)
@@ -271,12 +281,14 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
             val db = AppDatabase.getDatabase(context!!)
 
             val ways = db.wayDao().findWaysByRequestId(selectedRequest.id!!)
-            ways.forEach { way ->
+            val deletedNodes = ways.map { way ->
                 val nodes = db.nodeDao().findNodesByWayId(way.id!!)
                 db.nodeDao().delete(*nodes.toTypedArray())
-                Log.i(TAG, "Deleted ${nodes.size} nodes")
-            }
+                nodes.size
+            }.reduce { acc, i -> acc + i }
+
             db.wayDao().delete(*ways.toTypedArray())
+            Log.i(TAG, "Deleted $deletedNodes nodes")
             Log.i(TAG, "Deleted ${ways.size} ways")
 
             db.requestDao().delete(selectedRequest)

@@ -129,7 +129,7 @@ class OpenStreetMapsClient : JobService() {
             val localBroadcastManager = LocalBroadcastManager.getInstance(this)
             val success = localBroadcastManager.sendBroadcast(intent)
             if (!success) {
-                Log.w(TAG, "Could not send broadcast about completed download")
+                Log.w(TAG, "Could not send broadcast about failed download")
             }
             return
         }
