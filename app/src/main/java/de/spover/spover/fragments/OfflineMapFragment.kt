@@ -32,6 +32,7 @@ import de.spover.spover.database.Request
 import de.spover.spover.network.OpenStreetMapsClient
 import java.util.*
 import kotlin.concurrent.thread
+import kotlin.concurrent.timer
 
 
 class OfflineMapFragment : Fragment(), OnMapReadyCallback {
@@ -148,38 +149,47 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
 //            googleMap!!.addMarker(MarkerOptions().position(topLeftLocation))
 //            googleMap!!.addMarker(MarkerOptions().position(bottomRightLocation))
 
-        OpenStreetMapsClient.scheduleBoundingBoxFetching(context!!, boundingBox, isStartedManually = true)
+        for (bbPart: BoundingBox in subdivideBoundingBox(boundingBox)) {
+            Log.d(TAG, "bb $bbPart")
+            OpenStreetMapsClient.scheduleBoundingBoxFetching(context!!, bbPart, isStartedManually = true)
+        }
         // FIXME show loading indicator and disable user interactions
     }
 
     private fun subdivideBoundingBox(bb: BoundingBox): List<BoundingBox> {
-        val maxSideLength = 10000 // divide if bounding box is larger
+        val maxSideLength = 35000 // divide if bounding box is larger
         val bbList = mutableListOf<BoundingBox>()
+        
+        var bbMin = Location("")
+        bbMin.latitude = bb.minLat
+        bbMin.longitude = bb.minLon
+        var bbMax = BoundingBox.translateLocationByMeters(bbMin, 0, maxSideLength)
 
-        val tmpLoc = Location("")
-        tmpLoc.latitude = bb.minLat
-        tmpLoc.longitude = bb.minLon
+        var remainingAdded = false
+        while (bbMax.latitude < bb.maxLat || !remainingAdded) {
 
-        var bbMax = BoundingBox.translateLocationByMeters(tmpLoc, maxSideLength, maxSideLength)
-        var currBB = BoundingBox(bb.minLat, bb.minLon, bbMax.latitude, bbMax.longitude)
-        while (currBB.maxLat < bb.maxLat) {
-            bbList.add(currBB)
-
-            bbMax = BoundingBox.translateLocationByMeters(bbMax, maxSideLength, 0)
-            currBB = BoundingBox(currBB.minLat, currBB.maxLon, currBB.maxLat, bbMax.longitude)
-            while (currBB.maxLon < bb.maxLon) {
-                bbList.add(currBB)
-                bbMax = BoundingBox.translateLocationByMeters(bbMax, maxSideLength, 0)
-                currBB = BoundingBox(currBB.minLat, currBB.maxLon, currBB.maxLat, bbMax.longitude)
+            if (bbMax.latitude > bb.maxLat) {
+                remainingAdded = true
+                bbMax.latitude = bb.maxLat
             }
-            // todo add remaining part smaller 10.000
+            bbMax = BoundingBox.translateLocationByMeters(bbMax, maxSideLength, 0)
 
-            currBB = BoundingBox(currBB.minLat, bb.minLon, currBB.maxLat, bb.maxLon)
-            bbMax.latitude = currBB.maxLat
-            bbMax.longitude = currBB.maxLon
+            while (bbMax.longitude < bb.maxLon) {
+                val tmpBB = BoundingBox(bbMin.latitude, bbMin.longitude, bbMax.latitude, bbMax.longitude)
+                bbList.add(tmpBB)
+
+                bbMax = BoundingBox.translateLocationByMeters(bbMax, maxSideLength, 0)
+                bbMin = BoundingBox.translateLocationByMeters(bbMin, maxSideLength, 0)
+            }
+            val remainingBB = BoundingBox(bbMin.latitude, bbMin.longitude, bbMax.latitude, bb.maxLon)
+            bbList.add(remainingBB)
+
+            bbMax.longitude = bb.minLon
             bbMax = BoundingBox.translateLocationByMeters(bbMax, 0, maxSideLength)
-            // todo add remaining part smaller 10.000
+            bbMin.longitude = bb.minLon
+            bbMin = BoundingBox.translateLocationByMeters(bbMin, 0, maxSideLength)
         }
+
         return bbList
     }
 

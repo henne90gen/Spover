@@ -32,7 +32,7 @@ class OpenStreetMapsClient : JobService() {
 
         private const val BASE_URL = "https://overpass-api.de/api/"
         private val TAG = OpenStreetMapsClient::class.java.simpleName
-        private const val JOB_ID = 1
+        private var JOB_ID = 1
 
         private val xmlMapper = XmlMapper().registerKotlinModule()
 
@@ -50,6 +50,9 @@ class OpenStreetMapsClient : JobService() {
                     .setExtras(bundle)
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                     .build()
+
+            JOB_ID++
+
             jobScheduler.schedule(jobInfo)
         }
 
