@@ -82,9 +82,38 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
         }
     }
 
+    /**
+     * If a request with the given bounding box exists return all ways and nodes corresponding
+     * to that request
+     */
     private fun loadSpeedDataFromLocalDatabase(location: Location) {
         updatingSpeedData.set(true)
-        ReadFromDBAsyncTask(this, location).execute()
+        DatabaseHelper.INSTANCE.executeTransaction(context) { db ->
+            Log.i(TAG, "Loading speed data from local database")
+
+            val requests = db.requestDao().findAllRequests()
+            this.availableBoundingBoxes = requests.map(Request::boundingBox).toMutableList()
+
+            Log.i(TAG, "Found ${requests.size} available areas")
+
+            val request = requests.firstOrNull {
+                it.boundingBox().contains(location)
+            }
+
+            Log.i(TAG, "New area selected: $request")
+
+            if (request == null) {
+                Log.w(TAG, "There is no new area that could be used")
+                this.updateCurrentSpeedData(null, wayMap)
+            } else {
+                val ways: List<Way> = db.wayDao().findWaysByRequestId(request.id!!)
+
+                for (way: Way in ways) {
+                    wayMap[way] = db.nodeDao().findNodesByWayId(way.id!!)
+                }
+                this.updateCurrentSpeedData(request, wayMap)
+            }
+        }
     }
 
     private fun updateCurrentSpeedData(request: Request?, wayMap: LinkedHashMap<Way, List<Node>>) {
@@ -176,48 +205,5 @@ class SpeedLimitService(val context: Context, val speedLimitCallback: SpeedLimit
             }
         }
         speedModeCallback()
-    }
-
-    /** if a request with the given bounding box exists return all ways and nodes corresponding
-     * to that request */
-    private class ReadFromDBAsyncTask(val speedLimitService: SpeedLimitService, val location: Location) : AsyncTask<Void, Void, Void>() {
-        val db = AppDatabase.getDatabase(speedLimitService.context)
-        var request: Request? = null
-        var wayMap: LinkedHashMap<Way, List<Node>> = linkedMapOf()
-
-        private var TAG = ReadFromDBAsyncTask::class.java.simpleName
-
-        override fun doInBackground(vararg params: Void?): Void? {
-            Log.i(TAG, "Loading speed data from local database")
-
-            val requests = db.requestDao().findAllRequests()
-            speedLimitService.availableBoundingBoxes = requests.map(Request::boundingBox).toMutableList()
-
-            Log.i(TAG, "Found ${requests.size} available areas")
-
-            request = requests.firstOrNull {
-                it.boundingBox().contains(location)
-            }
-
-            Log.i(TAG, "New area selected: $request")
-
-            if (request == null) {
-                Log.w(TAG, "There is no new area that could be used")
-                return null
-            }
-            val ways: List<Way> = db.wayDao().findWaysByRequestId(request!!.id!!)
-
-            for (way: Way in ways) {
-                wayMap[way] = db.nodeDao().findNodesByWayId(way.id!!)
-            }
-            return null
-        }
-
-        // called after doInBackground finished
-        override fun onPostExecute(result: Void?) {
-            super.onPostExecute(result)
-            speedLimitService.updateCurrentSpeedData(request, wayMap)
-            db.close()
-        }
     }
 }

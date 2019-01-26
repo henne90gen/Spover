@@ -12,12 +12,10 @@ class OsmPersistenceHelper {
         val TAG = OsmPersistenceHelper::class.simpleName
     }
 
-    fun persistOsmXmlResult(context: Context, osm: Osm, boundingBox: BoundingBox) {
+    private fun persistOsmXmlResultSynchronised(db: AppDatabase, osm: Osm, boundingBox: BoundingBox) {
         val startTime = System.currentTimeMillis()
         Log.i(TAG, "Writing ways to database.")
         Log.i(TAG, "Found ${osm.nodes?.size} nodes and ${osm.ways?.size} ways")
-
-        val db = AppDatabase.getDatabase(context)
 
         val request = Request(
                 maxLat = boundingBox.maxLat,
@@ -58,10 +56,14 @@ class OsmPersistenceHelper {
             }
         }
 
-        db.close()
-
         val endTime = System.currentTimeMillis()
         val diff = endTime - startTime
         Log.i(TAG, "Writing ways to database. Done. ($diff ms)")
+    }
+
+    fun persistOsmXmlResult(context: Context, osm: Osm, boundingBox: BoundingBox) {
+        DatabaseHelper.INSTANCE.executeTransaction(context) { db ->
+            persistOsmXmlResultSynchronised(db, osm, boundingBox)
+        }
     }
 }

@@ -29,11 +29,10 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import de.spover.spover.BoundingBox
 import de.spover.spover.OverlayWithHole
 import de.spover.spover.R
-import de.spover.spover.database.AppDatabase
+import de.spover.spover.database.DatabaseHelper
 import de.spover.spover.database.Request
 import de.spover.spover.network.OpenStreetMapsClient
 import java.util.*
-import kotlin.concurrent.thread
 
 
 class OfflineMapFragment : Fragment(), OnMapReadyCallback {
@@ -75,7 +74,7 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
 
         btnNextArea = rootView.findViewById(R.id.btnNextArea)
         btnNextArea.setOnClickListener {
-            selectNextAreaAndRedrawArea()
+            selectNextAreaAndRedrawAreas()
         }
 
         btnDeleteArea = rootView.findViewById(R.id.btnDeleteArea)
@@ -247,12 +246,10 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun reloadAreas(moveCameraAfterUpdate: Boolean = true) {
-        thread {
-            val db = AppDatabase.getDatabase(context!!)
+        DatabaseHelper.INSTANCE.executeTransaction(context!!) { db ->
             requests = db.requestDao().findAllRequests().toMutableList()
-            db.close()
 
-            activity?.runOnUiThread {
+            activity!!.runOnUiThread {
                 polygons = requests.map {
                     val rectOptions = PolygonOptions()
                             .add(
@@ -266,7 +263,7 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
 
                 // currentPositionIndex will be increased before accessing the first element
                 currentPositionIndex = requests.size - 2
-                selectNextAreaAndRedrawArea(moveCameraAfterUpdate)
+                selectNextAreaAndRedrawAreas(moveCameraAfterUpdate)
             }
         }
     }
@@ -275,10 +272,10 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
         val selectedRequest = requests.removeAt(currentPositionIndex)
         polygons.remove(selectedRequest.id!!)
 
-        selectNextAreaAndRedrawArea()
+        selectNextAreaAndRedrawAreas()
 
-        thread {
-            val db = AppDatabase.getDatabase(context!!)
+        DatabaseHelper.INSTANCE.executeTransaction(context!!) { db ->
+            Log.i(TAG, "Starting to delete request with id=${selectedRequest.id}")
 
             val ways = db.wayDao().findWaysByRequestId(selectedRequest.id!!)
             val deletedNodes = ways.map { way ->
@@ -286,15 +283,13 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
                 db.nodeDao().delete(*nodes.toTypedArray())
                 nodes.size
             }.reduce { acc, i -> acc + i }
+            Log.i(TAG, "Deleted $deletedNodes nodes")
 
             db.wayDao().delete(*ways.toTypedArray())
-            Log.i(TAG, "Deleted $deletedNodes nodes")
             Log.i(TAG, "Deleted ${ways.size} ways")
 
             db.requestDao().delete(selectedRequest)
             Log.i(TAG, "Deleted request with id=${selectedRequest.id}")
-
-            db.close()
 
             activity!!.runOnUiThread {
                 reloadAreas(false)
@@ -302,7 +297,7 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
         }
     }
 
-    private fun selectNextAreaAndRedrawArea(moveCameraAfterUpdate: Boolean = true) {
+    private fun selectNextAreaAndRedrawAreas(moveCameraAfterUpdate: Boolean = true) {
         // Remove all polygons from map
         googleMap.clear()
 
@@ -328,6 +323,8 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
                 val northEast = LatLng(boundingBox.minLat, boundingBox.minLon)
                 val bounds = LatLngBounds(northEast, southWest)
                 animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 270))
+
+                viewHasBeenCentered = true
             }
 
             polygons.forEach {

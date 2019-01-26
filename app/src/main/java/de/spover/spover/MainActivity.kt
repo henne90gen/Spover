@@ -3,6 +3,7 @@ package de.spover.spover
 import android.os.Bundle
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
+import de.spover.spover.database.DatabaseHelper
 import de.spover.spover.fragments.SettingsFragment
 
 
@@ -42,5 +43,10 @@ class MainActivity : AppCompatActivity() {
         val settingsFragmentTag = "settingsFragmentTag"
         transaction.add(R.id.fragmentContainer, settingsFragment, settingsFragmentTag)
         transaction.commit()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        DatabaseHelper.INSTANCE.destroy()
     }
 }
