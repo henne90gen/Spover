@@ -314,7 +314,7 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
             return
         }
         btnDeleteArea.isEnabled = true
-        btnNextArea.isEnabled = true
+        btnNextArea.isEnabled = requests.size != 1
 
         currentPositionIndex++
         if (currentPositionIndex >= requests.size) {
