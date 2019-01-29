@@ -45,6 +45,7 @@ class LightService(context: Context, val callback: LightCallback) : SensorEventL
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+        // do nothing
     }
 
     fun destroy() {

@@ -298,7 +298,7 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
             db.requestDao().delete(selectedRequest)
             Log.i(TAG, "Deleted request with id=${selectedRequest.id}")
 
-            activity!!.runOnUiThread {
+            activity?.runOnUiThread {
                 reloadAreas(false)
             }
         }
