@@ -24,8 +24,6 @@ class NotificationListener : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         if (isGmapsNavNotification(sbn)
-                && !overlayHelper.isOverlayServiceRunning()
-                && overlayHelper.displaysAnUI()
                 && settings.get(SpoverSettings.REOPEN_FLAG)) {
             overlayHelper.launchOverlayService()
         }
@@ -34,9 +32,7 @@ class NotificationListener : NotificationListenerService() {
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
         if (isGmapsNavNotification(sbn)) {
             setReopenFlag(true)
-            if (overlayHelper.isOverlayServiceRunning()) {
-                overlayHelper.stopOverlayService()
-            }
+            overlayHelper.stopOverlayService()
         }
     }
 

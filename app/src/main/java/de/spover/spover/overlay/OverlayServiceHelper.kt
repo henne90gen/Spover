@@ -3,10 +3,14 @@ package de.spover.spover.overlay
 import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
+import android.provider.Settings
 import android.util.Log
 import de.spover.spover.settings.SettingsStore
 import de.spover.spover.settings.SpoverSettings
 
+/**
+ * Helper class that encapsulates logic to start, stop and restart the [OverlayService]
+ */
 class OverlayServiceHelper(val context: Context) {
 
     companion object {
@@ -15,43 +19,56 @@ class OverlayServiceHelper(val context: Context) {
 
     private var settings = SettingsStore(context)
 
+    /**
+     * Searches through all running services to find one, who's classname matches the classname of [OverlayService]
+     */
     fun isOverlayServiceRunning(): Boolean {
-        // FixMe can probably be done with some fancy "any" lambda expression...
         val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        for (service in manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (OverlayService::class.java.name == service.service.className) {
-                return true
-            }
+        return manager.getRunningServices(Integer.MAX_VALUE).any {
+            OverlayService::class.java.name == it.service.className
         }
-        return false
     }
 
     /**
-     * returns true if the overlay service displays an UI, since it's not useful
-     * to open an service without an UI and therefore no possibility to close it
+     * returns true if the [OverlayService] will display an UI, since it's not useful
+     * to open a service without an UI and therefore no possibility to close it
      * (except in app settings)
      */
-    fun displaysAnUI(): Boolean {
+    fun willDisplayAnUI(): Boolean {
         return (settings.get(SpoverSettings.SHOW_CURRENT_SPEED)
                 || settings.get(SpoverSettings.SHOW_SPEED_LIMIT))
     }
 
+    /**
+     * Starts [OverlayService] if all of the the following conditions are met:
+     * - it is not already running (see [isOverlayServiceRunning])
+     * - we have the permission to draw overlays (see [Settings.canDrawOverlays])
+     * - we would be displaying an UI (see [willDisplayAnUI])
+     */
     fun launchOverlayService() {
-        Log.d(TAG, "started overlay service")
-        context.startService(Intent(context, OverlayService::class.java))
+        if (!isOverlayServiceRunning()
+                && Settings.canDrawOverlays(context)
+                && willDisplayAnUI()) {
+            Log.d(TAG, "started overlay service")
+            context.startService(Intent(context, OverlayService::class.java))
+        }
     }
 
+    /**
+     * Stops [OverlayService], if it is running
+     */
     fun stopOverlayService() {
-        Log.d(TAG, "stopped overlay service")
-        context.stopService(Intent(context, OverlayService::class.java))
+        if (isOverlayServiceRunning()) {
+            Log.d(TAG, "stopped overlay service")
+            context.stopService(Intent(context, OverlayService::class.java))
+        }
     }
 
+    /**
+     * Restarts the [OverlayService]
+     */
     fun restartOverlayService() {
-        if (isOverlayServiceRunning()) {
-            stopOverlayService()
-        }
-        if (displaysAnUI()) {
-            launchOverlayService()
-        }
+        stopOverlayService()
+        launchOverlayService()
     }
 }

@@ -74,15 +74,7 @@ class SettingsFragment : Fragment() {
         }
 
         overlayBtn = rootView.findViewById(R.id.btnOverlay)
-        overlayBtn.setOnClickListener {
-            if (Settings.canDrawOverlays(context) && overlayHelper.displaysAnUI()) {
-                overlayHelper.launchOverlayService()
-            } else if (!Settings.canDrawOverlays(context)) {
-                Toast.makeText(context, getString(R.string.toast_overlay_perm_missing), Toast.LENGTH_LONG).show()
-            } else if (!overlayHelper.displaysAnUI()) {
-                Toast.makeText(context, getString(R.string.toast_no_ui_visible), Toast.LENGTH_LONG).show()
-            }
-        }
+        overlayBtn.setOnClickListener(this::launchOverlay)
 
         speedSwitch = setupSettingsSwitch(rootView, R.id.switchShowSpeed, SpoverSettings.SHOW_CURRENT_SPEED)
         speedLimitSwitch = setupSettingsSwitch(rootView, R.id.switchShowSpeedLimit, SpoverSettings.SHOW_SPEED_LIMIT)
@@ -109,6 +101,19 @@ class SettingsFragment : Fragment() {
         }
 
         return rootView
+    }
+
+    private fun launchOverlay(view: View) {
+        if (!Settings.canDrawOverlays(context)) {
+            Toast.makeText(context, getString(R.string.toast_overlay_perm_missing), Toast.LENGTH_LONG).show()
+            return
+        }
+        if (!overlayHelper.willDisplayAnUI()) {
+            Toast.makeText(context, getString(R.string.toast_no_ui_visible), Toast.LENGTH_LONG).show()
+            return
+        }
+
+        overlayHelper.launchOverlayService()
     }
 
     private fun goToOfflineMap() {
