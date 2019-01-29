@@ -6,13 +6,15 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.location.Location
 import android.util.Log
-import de.spover.spover.settings.SettingsStore
-import de.spover.spover.settings.SpoverSettings
-import android.os.AsyncTask
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import de.spover.spover.BoundingBox
-import de.spover.spover.database.*
+import de.spover.spover.database.DatabaseHelper
+import de.spover.spover.database.Node
+import de.spover.spover.database.Request
+import de.spover.spover.database.Way
 import de.spover.spover.network.OpenStreetMapsClient
+import de.spover.spover.settings.SettingsStore
+import de.spover.spover.settings.SpoverSettings
 import java.util.concurrent.atomic.AtomicBoolean
 
 enum class SpeedMode {
@@ -20,7 +22,6 @@ enum class SpeedMode {
     YELLOW,
     RED
 }
-
 
 typealias SpeedLimitChangedCallback = (String) -> Unit
 typealias SpeedModeChangeCallback = () -> Unit

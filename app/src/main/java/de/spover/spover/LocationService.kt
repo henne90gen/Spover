@@ -6,10 +6,10 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.location.LocationProvider
 import android.os.Bundle
-import android.os.Handler
-import androidx.core.content.ContextCompat
 import android.util.Log
+import androidx.core.content.ContextCompat
 
 typealias SpeedCallback = (Double) -> Unit
 typealias SpeedUnavailable = () -> Unit
@@ -24,18 +24,14 @@ class LocationService(var context: Context,
     companion object {
         private val TAG = LocationService::class.java.simpleName
         private const val SPEED_THRESHOLD = 1 / 3.6
-        private val TIMEOUT = 10000
     }
 
     private var lastLocation: Location? = null
-    private var lastLocUpdateTime: Long = 0
+    private var lastLocationUpdateTime: Long = 0
 
     private val locationManager: LocationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
     private val speedHistory = ArrayList<Pair<TimeStamp, Speed>>()
-
-    // time in milliseconds with no location update before the current speed and speed limit gets removed
-    private var timeout = TIMEOUT
 
     init {
         if (ContextCompat.checkSelfPermission(context,
@@ -44,33 +40,15 @@ class LocationService(var context: Context,
         } else {
             Log.e(TAG, "Location permission was not granted")
         }
-        setupNoLocationTimeoutHandler()
     }
 
-    private fun setupNoLocationTimeoutHandler() {
-        val handler = Handler()
-        val delay = 1000L //milliseconds
-        handler.postDelayed(object : Runnable {
-            override fun run() {
-                timeout -= delay.toInt()
-                if (timeout <= 0) {
-                    speedUnavailableCallback?.invoke()
-                }
-                handler.postDelayed(this, delay)
-            }
-        }, delay)
-    }
-
-    private fun resetTimeout() {
-        timeout = TIMEOUT
-    }
 
     override fun onLocationChanged(location: Location) {
-        Log.d(TAG, "Received location update: $location")
         val currentTime = System.currentTimeMillis()
+        Log.d(TAG, "Received location update: $location")
         lastLocation?.let {
             val distance = location.distanceTo(it)
-            val timeDiff = currentTime - lastLocUpdateTime
+            val timeDiff = currentTime - lastLocationUpdateTime
             val timeDiffInSeconds = timeDiff / 1000.0
             var speed = distance / timeDiffInSeconds
             if (speed < SPEED_THRESHOLD) {
@@ -85,8 +63,7 @@ class LocationService(var context: Context,
         }
 
         lastLocation = location
-        lastLocUpdateTime = currentTime
-        resetTimeout()
+        lastLocationUpdateTime = currentTime
         locationCallback?.invoke(location)
     }
 
@@ -111,14 +88,16 @@ class LocationService(var context: Context,
     }
 
     override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {
-        //Log.d(TAG, "Status changed: $provider, $status, $extras")
+        if (status == LocationProvider.OUT_OF_SERVICE || status == LocationProvider.TEMPORARILY_UNAVAILABLE) {
+            speedUnavailableCallback?.invoke()
+        }
     }
 
     override fun onProviderEnabled(provider: String) {
-        //Log.d(TAG, "Provider enabled: $provider")
+        // do nothing
     }
 
     override fun onProviderDisabled(provider: String) {
-        //Log.d(TAG, "Provider disabled: $provider")
+        speedUnavailableCallback?.invoke()
     }
 }
