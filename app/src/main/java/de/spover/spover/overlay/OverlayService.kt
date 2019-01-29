@@ -252,12 +252,7 @@ class OverlayService : Service(), View.OnTouchListener {
 
         Log.d(TAG, "X: $x, Y: $y, IconX: $iconX, IconY: $iconY, IconWidth: $iconWidth, IconHeight: $iconHeight")
 
-        if (x > iconX && x < iconX + iconWidth) {
-            if (y > iconY && y < iconY + iconHeight) {
-                return true
-            }
-        }
-        return false
+        return y > iconY
     }
 
     override fun onTouch(view: View, motionEvent: MotionEvent): Boolean {

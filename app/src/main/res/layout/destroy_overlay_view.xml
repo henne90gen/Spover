@@ -7,10 +7,12 @@
 
     <ImageView
         android:id="@+id/destroy_icon"
-        android:src="@drawable/ic_cross_in_ring"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_marginBottom="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="90dp"
         android:layout_alignParentBottom="true"
-        android:layout_centerInParent="true" />
+        android:layout_centerInParent="true"
+        android:src="@drawable/ic_cross_in_ring"
+        android:paddingBottom="20dp"
+        android:paddingTop="10dp"
+        android:background="@drawable/listgrad"/>
 </RelativeLayout>
