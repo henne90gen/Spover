@@ -1,9 +1,11 @@
-<img src="https://raw.githubusercontent.com/henne90gen/Spover/master/images/app_icon.png" width="50px"/>
+<img src="https://raw.githubusercontent.com/henne90gen/Spover/master/images/app_icon.png" align="left" width="50px"/>
 
 # Summary
 Display an overlay on navigation apps showing the speed limit information and current speed.
 
-<img src="https://raw.githubusercontent.com/henne90gen/Spover/master/images/overlay_screenshot.png" />
+| light mode | dark mode |
+| ---------- | --------- |
+| <img src="https://raw.githubusercontent.com/henne90gen/Spover/master/images/overlay_screenshot.png" height="600px" /> | <img src="https://raw.githubusercontent.com/henne90gen/Spover/master/images/nightmode.png" height="600px" /> |
 
 # Features
 ### Autostart
@@ -46,6 +48,6 @@ To build the app, a file called keys.xml is required to be in app/src/main/res/v
 
 ## CREDITS
 
-Sounds from:
-(https://freesound.org/people/tim.kahn/ not anymore)
-https://freesound.org/people/thisusernameis/sounds/426888/
+warning sound: https://freesound.org/people/thisusernameis/sounds/426888/
+
+open street map: https://www.openstreetmap.org
