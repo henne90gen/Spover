@@ -1,17 +1,37 @@
-# Summary
-Spover offers an overlay for navigation apps (or anythin else) showing the speed limit information and current speed.
+<img src="https://raw.githubusercontent.com/henne90gen/Spover/master/images/app_icon.png" width="50px"/>
 
-Adaptations:
-- automatic detection of navigation start
+# Summary
+Display an overlay on navigation apps showing the speed limit information and current speed.
+
+<img src="https://raw.githubusercontent.com/henne90gen/Spover/master/images/overlay_screenshot.png" />
+
+# Features
+### Autostart
+- Spover starts the overlay automatically as soon as you start the navigation on GMaps
+
+### Nightmode
+- adapt theme to current environmental brightness
+
+
+### Caching speed limit data
 - manual caching speedlimit data for areas without network connection
-- overlay instead of whole screen
+
+
+### Warnings
 - sound when user is driving over speedlimit
 - different overlay color depending on how much faster/slower than the speedlimit the user is driving
 
-Architecture:
-- local database with Room on device for caching
+# Architecture:
 - Android SDK (detect navigation start)
-- OSM server connection
+    - Service to display an UI over other apps
+    - HttpsUrlConnection to fetch data from OpenStreetMaps API
+    - Room database library to save speed limit data locally
+- Jackson library to parse XML response
+- JUnit for testing
+
+
+# Way mapping
+<img src="https://raw.githubusercontent.com/henne90gen/Spover/master/images/way_mapping.png" />
 
 ## Notes
 
