@@ -119,7 +119,7 @@ class OfflineMapFragment : Fragment(), OnMapReadyCallback {
         btnDeleteArea.show()
         btnNewArea.show()
 
-        menuBtn.animate().rotation(90.0f)
+        menuBtn.animate().rotation(405.0f)
     }
 
     private fun closeMenu() {
